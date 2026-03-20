@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>OLX Scheduler</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════════════════
+   DESIGN: Clean professional — OLX DNA, modern execution
+   Primary: OLX Orange (#3A77FF blue-shifted for tech feel)
+   Surface: Deep navy with warm cards
+   ═══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --olx:      #002F34;   /* OLX тёмно-зелёный (бренд) */
+  --olx-2:    #23E5DB;   /* OLX бирюзовый */
+  --accent:   #FFCE32;   /* OLX жёлтый */
+  --blue:     #3D6DCC;
+  --bg:       #F2F4F5;
+  --surface:  #FFFFFF;
+  --card:     #FFFFFF;
+  --border:   #E8EAED;
+  --text:     #1A1D20;
+  --muted:    #8C9BAB;
+  --soft:     #B0BBC8;
+  --success:  #23BF6F;
+  --warn:     #FF9800;
+  --danger:   #E53935;
+  --r:        12px;
+  --r-sm:     8px;
+  --r-pill:   100px;
+  --shadow:   0 2px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+}
+
+html { font-size: 15px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Geologica', sans-serif;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ── */
+.hd {
+  background: var(--olx);
+  padding: 0 16px;
+  display: flex; align-items: center; gap: 10px;
+  position: sticky; top: 0; z-index: 200;
+  height: 52px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+.hd-logo {
+  font-weight: 800; font-size: 18px; letter-spacing: -.5px;
+  color: var(--accent);
+}
+.hd-pipe { width: 1px; height: 18px; background: rgba(255,255,255,.2); }
+.hd-sub { font-size: 12px; color: rgba(255,255,255,.6); font-weight: 400; }
+.hd-badge {
+  margin-left: auto;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+}
+.hd-badge.active { background: var(--success); color: #fff; }
+.hd-badge.inactive { background: var(--warn); color: #fff; }
+
+/* ── Tabs ── */
+.tabs {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; overflow-x: auto;
+  scrollbar-width: none; position: sticky; top: 52px; z-index: 100;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex: 1; min-width: 56px;
+  padding: 12px 6px 11px;
+  text-align: center; cursor: pointer;
+  font-size: 10px; font-weight: 600; letter-spacing: .3px;
+  text-transform: uppercase; color: var(--muted);
+  border-bottom: 2px solid transparent;
+  transition: all .2s; white-space: nowrap;
+}
+.tab .ti { font-size: 18px; display: block; margin-bottom: 2px; }
+.tab.on { color: var(--olx); border-bottom-color: var(--olx); }
+
+/* ── Page ── */
+.pg { display: none; padding: 14px 14px 96px; }
+.pg.on { display: block; animation: slideUp .22s cubic-bezier(.22,1,.36,1); }
+@keyframes slideUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
+
+/* ── Sub Banner (нет подписки) ── */
+.sub-wall {
+  background: linear-gradient(135deg, var(--olx) 0%, #0d4a4f 100%);
+  border-radius: var(--r);
+  padding: 24px 20px; text-align: center; color: #fff;
+  margin-bottom: 16px;
+}
+.sub-wall h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.sub-wall p { font-size: 13px; opacity: .8; margin-bottom: 18px; line-height: 1.5; }
+.btn-sub { background: var(--accent); color: var(--olx); border: none;
+  padding: 12px 28px; border-radius: var(--r-pill);
+  font-weight: 800; font-size: 14px; cursor: pointer; font-family: 'Geologica', sans-serif; }
+
+/* ── Plan Cards ── */
+.plans-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.plan-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px; cursor: pointer;
+  transition: all .2s; position: relative; overflow: hidden;
+}
+.plan-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 4px; height: 100%;
+  background: var(--plan-color, var(--muted));
+}
+.plan-card:active { transform: scale(.98); }
+.plan-card.selected { border-color: var(--plan-color, var(--olx)); }
+.plan-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.plan-price { font-size: 20px; font-weight: 800; color: var(--olx); margin-bottom: 10px; }
+.plan-price span { font-size: 13px; font-weight: 400; color: var(--muted); }
+.plan-features { display: flex; flex-direction: column; gap: 4px; }
+.plan-feat { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.plan-feat::before { content: '✓'; color: var(--success); font-weight: 700; }
+.plan-badge {
+  position: absolute; top: 12px; right: 12px;
+  background: var(--accent); color: var(--olx);
+  font-size: 9px; font-weight: 800; text-transform: uppercase;
+  padding: 3px 8px; border-radius: var(--r-pill); letter-spacing: .5px;
+}
+
+/* ── Payment Methods ── */
+.pay-methods { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.pay-method {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; transition: border-color .15s;
+}
+.pay-method:active { background: var(--bg); }
+.pay-method:hover { border-color: var(--olx); }
+.pay-icon { width: 40px; height: 28px; border-radius: 4px; object-fit: contain;
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0; }
+.pay-info { flex: 1; }
+.pay-name { font-size: 14px; font-weight: 600; }
+.pay-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.pay-arr { color: var(--muted); font-size: 18px; }
+
+/* ── Stats ── */
+.stat-row { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 12px;
+}
+.stat-n { font-size: 28px; font-weight: 800; color: var(--olx); line-height: 1; }
+.stat-l { font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 500; }
+.stat-card.full { grid-column: 1/-1; }
+
+/* ── Section Header ── */
+.sec-h {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.sec-ttl { font-size: 13px; font-weight: 700; color: var(--text); }
+.sec-lnk { font-size: 12px; color: var(--blue); font-weight: 600; cursor: pointer; }
+
+/* ── Ad Card (OLX style) ── */
+.ad-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 10px;
+  overflow: hidden;
+  display: flex;
+  transition: box-shadow .15s;
+  cursor: pointer;
+}
+.ad-card:active { box-shadow: var(--shadow); }
+.ad-thumb {
+  width: 90px; height: 90px; flex-shrink: 0;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; color: var(--soft);
+}
+.ad-body { flex: 1; padding: 10px 12px; min-width: 0; }
+.ad-title { font-size: 14px; font-weight: 600; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ad-price { font-size: 15px; font-weight: 800; color: var(--olx); margin-top: 3px; }
+.ad-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 5px; }
+.ad-meta span { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 3px; }
+.ad-status-row { display: flex; align-items: center; gap: 6px; margin-top: 7px; }
+.badge {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  padding: 2px 7px; border-radius: var(--r-pill); letter-spacing: .4px;
+}
+.b-draft { background: #F0F2F5; color: var(--muted); }
+.b-sched { background: #FFF3E0; color: #E65100; }
+.b-pub   { background: #E8F5E9; color: #2E7D32; }
+.b-fail  { background: #FFEBEE; color: #C62828; }
+.b-pub-ing { background: #E3F2FD; color: #1565C0; }
+.spin-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--blue);
+  display: inline-block;
+}
+
+/* ── Action Buttons ── */
+.ad-actions {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 7px;
+}
+.btn-xs {
+  padding: 5px 11px; border-radius: var(--r-pill);
+  font-size: 11px; font-weight: 600; border: none;
+  cursor: pointer; font-family: 'Geologica', sans-serif;
+  transition: opacity .15s;
+}
+.btn-xs:active { opacity: .65; }
+.btn-edit { background: #E8F0FE; color: var(--blue); }
+.btn-del  { background: #FFEBEE; color: var(--danger); }
+.btn-pub  { background: #E8F5E9; color: #2E7D32; }
+.btn-spin { background: #EDE7F6; color: #512DA8; }
+
+/* ── Chips ── */
+.chips { display: flex; gap: 7px; overflow-x: auto; margin-bottom: 12px;
+  padding-bottom: 2px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  padding: 6px 14px; border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  background: var(--surface); cursor: pointer; white-space: nowrap;
+  transition: all .15s;
+}
+.chip.on { border-color: var(--olx); color: var(--olx); background: #E8F5F5; }
+
+/* ── Form ── */
+.form-block {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px; margin-bottom: 12px;
+}
+.form-ttl {
+  font-size: 11px; font-weight: 700; letter-spacing: .8px;
+  text-transform: uppercase; color: var(--olx);
+  margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+}
+.fld { margin-bottom: 12px; }
+.fld:last-child { margin-bottom: 0; }
+.fld label { display: block; font-size: 12px; color: var(--muted);
+  font-weight: 600; margin-bottom: 5px; }
+.fld input, .fld textarea, .fld select {
+  width: 100%; background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: var(--r-sm); color: var(--text);
+  font-family: 'Geologica', sans-serif; font-size: 14px;
+  padding: 10px 12px; outline: none;
+  transition: border-color .2s, box-shadow .2s; -webkit-appearance: none;
+}
+.fld input:focus, .fld textarea:focus, .fld select:focus {
+  border-color: var(--olx); background: #fff;
+  box-shadow: 0 0 0 3px rgba(0,47,52,.08);
+}
+.fld textarea { min-height: 90px; resize: none; line-height: 1.55; }
+.fld select option { background: #fff; }
+.fld-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+input[type="datetime-local"] { color-scheme: light; }
+
+/* ── Toggle Switch ── */
+.sw-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-radius: 10px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  margin-bottom: 12px; cursor: pointer; transition: border-color .2s;
+}
+.sw-row:hover { border-color: var(--olx); }
+.sw-lbl b { font-size: 13px; font-weight: 600; }
+.sw-lbl span { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; }
+.sw {
+  width: 44px; height: 24px; border-radius: 100px;
+  background: var(--border); position: relative; flex-shrink: 0;
+  transition: background .2s;
+}
+.sw::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; border-radius: 50%; background: #fff;
+  transition: transform .22s cubic-bezier(.22,1,.36,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+}
+.sw.on { background: var(--olx); }
+.sw.on::after { transform: translateX(20px); }
+
+/* ── Spin Panel ── */
+.spin-box {
+  background: #EDE7F6; border: 1px solid #D1C4E9;
+  border-radius: 10px; padding: 12px 14px; margin-top: 10px;
+}
+.spin-box-ttl { font-size: 12px; font-weight: 700; color: #512DA8; margin-bottom: 8px; }
+.spin-variants { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.spin-var {
+  padding: 5px 12px; border-radius: var(--r-pill);
+  border: 1.5px solid #D1C4E9; background: #fff;
+  font-size: 11px; font-weight: 600; color: #512DA8;
+  cursor: pointer; transition: all .15s;
+}
+.spin-var.on { background: #512DA8; color: #fff; border-color: #512DA8; }
+#spinResult {
+  min-height: 70px; font-size: 13px; color: var(--text);
+  line-height: 1.55; white-space: pre-wrap;
+}
+.spin-preview {
+  background: #fff; border-radius: 8px; padding: 10px 12px;
+  font-size: 13px; line-height: 1.55; min-height: 60px;
+  border: 1px solid #D1C4E9;
+}
+.spin-loading { color: #9C27B0; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+.spin-dot-anim { animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Datetime sched panel ── */
+.sched-panel { display: none; }
+.sched-panel.on { display: block; animation: slideUp .2s; }
+.sched-hint {
+  font-size: 11px; color: var(--warn); line-height: 1.5;
+  padding: 8px 12px; border-radius: 8px;
+  background: #FFF3E0; border: 1px solid #FFCC80;
+  margin-top: 8px;
+}
+
+/* ── Sticky CTA ── */
+.cta-wrap {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 10px 14px 14px;
+  background: linear-gradient(transparent, var(--bg) 30%);
+  z-index: 100;
+}
+.cta {
+  width: 100%; padding: 14px;
+  border: none; border-radius: var(--r);
+  font-family: 'Geologica', sans-serif;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  background: var(--olx); color: #fff;
+  box-shadow: 0 4px 16px rgba(0,47,52,.3);
+  transition: transform .15s, opacity .15s;
+}
+.cta:active { transform: scale(.98); opacity: .9; }
+.cta.sched { background: var(--warn); }
+.cta.secondary { background: var(--surface); color: var(--olx);
+  border: 2px solid var(--olx); box-shadow: none; }
+
+/* ── Empty ── */
+.empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+.empty-ico { font-size: 44px; opacity: .5; margin-bottom: 10px; }
+.empty-ttl { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.empty-sub { font-size: 13px; line-height: 1.5; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 80px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--olx); color: #fff;
+  border-radius: var(--r-pill); padding: 10px 20px;
+  font-size: 13px; font-weight: 600;
+  box-shadow: var(--shadow-lg); z-index: 999;
+  opacity: 0; transition: all .25s; pointer-events: none;
+  white-space: nowrap;
+}
+.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.err { background: var(--danger); }
+.toast.ok  { background: var(--success); }
+
+/* ── Modal ── */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  z-index: 500; display: none; align-items: flex-end;
+}
+.modal-bg.on { display: flex; animation: fadeIn .2s; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.modal {
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  padding: 20px 16px 32px; width: 100%;
+  animation: slideUp .25s cubic-bezier(.22,1,.36,1);
+}
+.modal-h { font-size: 16px; font-weight: 700; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between; }
+.modal-close { font-size: 20px; cursor: pointer; color: var(--muted); }
+
+/* ── Accounts ── */
+.acc-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 16px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+.acc-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--olx); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px; flex-shrink: 0;
+}
+.acc-info { flex: 1; }
+.acc-label { font-size: 14px; font-weight: 600; }
+.acc-email { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.acc-del { color: var(--danger); font-size: 18px; cursor: pointer; padding: 4px; }
+
+/* ── Subscription page ── */
+.sub-info-card {
+  background: linear-gradient(135deg, var(--olx), #0d5c63);
+  border-radius: var(--r); padding: 20px; color: #fff; margin-bottom: 16px;
+}
+.sub-info-plan { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+.sub-info-date { font-size: 13px; opacity: .8; }
+.sub-info-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.sub-stat { background: rgba(255,255,255,.1); border-radius: 10px; padding: 10px 12px; }
+.sub-stat-n { font-size: 20px; font-weight: 800; }
+.sub-stat-l { font-size: 10px; opacity: .75; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hd">
+  <div class="hd-logo">OLX Scheduler</div>
+  <div class="hd-pipe"></div>
+  <div class="hd-sub">для риелторов</div>
+  <div class="hd-badge inactive" id="subBadge">Загрузка...</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab on" data-pg="home"><span class="ti">🏠</span>Главная</div>
+  <div class="tab" data-pg="create"><span class="ti">➕</span>Создать</div>
+  <div class="tab" data-pg="ads"><span class="ti">📋</span>Объявления</div>
+  <div class="tab" data-pg="sched"><span class="ti">⏰</span>Расписание</div>
+  <div class="tab" data-pg="sub"><span class="ti">💳</span>Подписка</div>
+</div>
+
+<!-- ═══ HOME ═══ -->
+<div class="pg on" id="pg-home">
+  <div id="noSubWall" style="display:none">
+    <div class="sub-wall">
+      <h2>Добро пожаловать!</h2>
+      <p>Для использования сервиса необходима подписка. Публикуйте объявления на OLX.uz автоматически с AI-защитой от блокировок.</p>
+      <button class="btn-sub" onclick="goTo('sub')">Выбрать тариф</button>
+    </div>
+  </div>
+
+  <div id="homeStats" style="display:none">
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-n" id="h-sched">0</div><div class="stat-l">Запланировано</div></div>
+      <div class="stat-card"><div class="stat-n" id="h-pub">0</div><div class="stat-l">Опубликовано</div></div>
+      <div class="stat-card"><div class="stat-n" id="h-draft">0</div><div class="stat-l">Черновики</div></div>
+      <div class="stat-card"><div class="stat-n" id="h-fail">0</div><div class="stat-l">Ошибки</div></div>
+    </div>
+
+    <div class="sec-h">
+      <div class="sec-ttl">Ближайшие публикации</div>
+      <div class="sec-lnk" onclick="goTo('sched')">Все →</div>
+    </div>
+    <div id="homeUpcoming"></div>
+
+    <div class="sec-h" style="margin-top:16px">
+      <div class="sec-ttl">Последние объявления</div>
+      <div class="sec-lnk" onclick="goTo('ads')">Все →</div>
+    </div>
+    <div id="homeRecent"></div>
+  </div>
+</div>
+
+<!-- ═══ CREATE ═══ -->
+<div class="pg" id="pg-create">
+  <div class="form-block">
+    <div class="form-ttl">📌 Основная информация</div>
+    <div class="fld">
+      <label>Заголовок *</label>
+      <input id="f-title" type="text" placeholder="3-комн. кв., 85м², Юнусабад, 5/9" maxlength="70"/>
+    </div>
+    <div class="fld-2">
+      <div class="fld">
+        <label>Цена</label>
+        <input id="f-price" type="text" placeholder="130 000"/>
+      </div>
+      <div class="fld">
+        <label>Валюта</label>
+        <select id="f-currency">
+          <option value="UZS">сум</option>
+          <option value="USD">USD</option>
+        </select>
+      </div>
+    </div>
+    <div class="fld">
+      <label>Телефон</label>
+      <input id="f-phone" type="tel" placeholder="+998 90 000 00 00"/>
+    </div>
+  </div>
+
+  <div class="form-block">
+    <div class="form-ttl">🏢 Параметры недвижимости</div>
+    <div class="fld-2">
+      <div class="fld">
+        <label>Комнат</label>
+        <select id="f-rooms">
+          <option value="">—</option>
+          <option>1</option><option>2</option><option>3</option>
+          <option>4</option><option>5+</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Площадь (м²)</label>
+        <input id="f-area" type="text" placeholder="85"/>
+      </div>
+    </div>
+    <div class="fld-2">
+      <div class="fld">
+        <label>Этаж</label>
+        <input id="f-floor" type="text" placeholder="5/9"/>
+      </div>
+      <div class="fld">
+        <label>Категория</label>
+        <select id="f-cat">
+          <option value="">—</option>
+          <option>Квартиры</option>
+          <option>Дома и дачи</option>
+          <option>Коммерческая недвижимость</option>
+          <option>Земельные участки</option>
+          <option>Новостройки</option>
+        </select>
+      </div>
+    </div>
+    <div class="fld-2">
+      <div class="fld">
+        <label>Город</label>
+        <select id="f-city">
+          <option value="">—</option>
+          <option>Ташкент</option><option>Самарканд</option>
+          <option>Бухара</option><option>Наманган</option>
+          <option>Андижан</option><option>Фергана</option>
+          <option>Нукус</option><option>Карши</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Район</label>
+        <input id="f-district" type="text" placeholder="Юнусабад"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-block">
+    <div class="form-ttl">📝 Описание</div>
+    <div class="fld">
+      <label>Текст объявления</label>
+      <textarea id="f-desc" placeholder="Опишите квартиру: ремонт, мебель, инфраструктура, документы..."></textarea>
+    </div>
+
+    <!-- Спин текста -->
+    <div class="sw-row" id="spinToggle">
+      <div class="sw-lbl">
+        <b>🔄 AI-спин текста</b>
+        <span>Перефразировать для защиты от блокировок OLX</span>
+      </div>
+      <div class="sw" id="spinSw"></div>
+    </div>
+
+    <div id="spinPanel" style="display:none">
+      <div class="spin-box">
+        <div class="spin-box-ttl">Стиль перефразирования:</div>
+        <div class="spin-variants">
+          <div class="spin-var on" data-v="0">Деловой</div>
+          <div class="spin-var" data-v="1">Живой</div>
+          <div class="spin-var" data-v="2">С другого угла</div>
+          <div class="spin-var" data-v="3">Детальный</div>
+        </div>
+        <button onclick="doSpin()" style="width:100%;padding:8px;border-radius:8px;border:none;background:#512DA8;color:#fff;font-family:'Geologica',sans-serif;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:8px">
+          ✨ Перефразировать
+        </button>
+        <div id="spinPreview" style="display:none">
+          <div style="font-size:11px;color:#512DA8;font-weight:700;margin-bottom:5px">Результат:</div>
+          <div class="spin-preview" id="spinResult"></div>
+          <button onclick="applySpinResult()" style="width:100%;padding:7px;border-radius:8px;border:none;background:#fff;color:#512DA8;font-family:'Geologica',sans-serif;font-weight:700;font-size:12px;cursor:pointer;margin-top:8px;border:1.5px solid #D1C4E9">
+            ✅ Применить
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-block">
+    <div class="form-ttl">⏰ Публикация</div>
+    <div class="fld">
+      <label>OLX аккаунт</label>
+      <select id="f-account">
+        <option value="">— Загрузка... —</option>
+      </select>
+    </div>
+    <div class="sw-row" id="schedToggle">
+      <div class="sw-lbl">
+        <b>⏰ Отложенная публикация</b>
+        <span>Выбрать дату и время</span>
+      </div>
+      <div class="sw" id="schedSw"></div>
+    </div>
+    <div class="sched-panel" id="schedPanel">
+      <div class="fld">
+        <label>Дата и время</label>
+        <input type="datetime-local" id="f-dt"/>
+      </div>
+      <div class="sched-hint">⏰ Бот запустит браузер и автоматически опубликует объявление в указанное время</div>
+    </div>
+  </div>
+
+  <input type="hidden" id="f-id"/>
+  <div style="height:80px"></div>
+  <div class="cta-wrap">
+    <button class="cta" id="ctaBtn" onclick="submitAd()">💾 Сохранить черновик</button>
+  </div>
+</div>
+
+<!-- ═══ ADS ═══ -->
+<div class="pg" id="pg-ads">
+  <div class="chips">
+    <div class="chip on" data-f="all">Все</div>
+    <div class="chip" data-f="draft">Черновики</div>
+    <div class="chip" data-f="scheduled">Запланировано</div>
+    <div class="chip" data-f="published">Опубликовано</div>
+    <div class="chip" data-f="failed">Ошибки</div>
+  </div>
+  <div id="adsList"></div>
+</div>
+
+<!-- ═══ SCHEDULE ═══ -->
+<div class="pg" id="pg-sched">
+  <div id="schedList"></div>
+</div>
+
+<!-- ═══ SUBSCRIPTION ═══ -->
+<div class="pg" id="pg-sub">
+  <div id="subContent"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Modal добавить аккаунт -->
+<div class="modal-bg" id="addAccModal">
+  <div class="modal">
+    <div class="modal-h">
+      <span>➕ Добавить OLX аккаунт</span>
+      <span class="modal-close" onclick="closeModal('addAccModal')">✕</span>
+    </div>
+    <div class="fld">
+      <label>Название (метка)</label>
+      <input id="m-label" type="text" placeholder="Основной, Резервный..."/>
+    </div>
+    <div class="fld">
+      <label>Email от OLX аккаунта</label>
+      <input id="m-email" type="email" placeholder="user@mail.ru"/>
+    </div>
+    <div class="fld">
+      <label>Пароль</label>
+      <input id="m-pass" type="password" placeholder="••••••••"/>
+    </div>
+    <button onclick="addAccount()" style="width:100%;padding:13px;border:none;border-radius:var(--r);background:var(--olx);color:#fff;font-family:'Geologica',sans-serif;font-weight:700;font-size:14px;cursor:pointer;margin-top:6px">
+      Добавить аккаунт
+    </button>
+  </div>
+</div>
+
+<script>
+const tg   = window.Telegram.WebApp;
+tg.ready(); tg.expand();
+const user = tg.initDataUnsafe?.user || {};
+const uid  = user.id || 0;
+const API  = '';  // '' = same origin, или 'https://api.your-domain.com'
+
+// ── Auth header ───────────────────────────────────────────────────────────────
+const initData = tg.initData || `user=${JSON.stringify(user)}`;
+const AUTH     = { 'x-init-data': initData, 'Content-Type': 'application/json' };
+
+// ── Local state (fallback без сервера) ────────────────────────────────────────
+const LS = 'olxs_v3';
+function lsGet()  { try { return JSON.parse(localStorage.getItem(LS)||'{}'); } catch { return {}; } }
+function lsSave(d){ localStorage.setItem(LS, JSON.stringify(d)); }
+function getAds() { return lsGet().ads || []; }
+function saveAds(a){ const s=lsGet(); s.ads=a; lsSave(s); }
+function nextId() { const a=getAds(); return a.length ? Math.max(...a.map(x=>x.id))+1 : 1; }
+
+// State
+let sub         = null;
+let accounts    = [];
+let curFilter   = 'all';
+let spinOn      = false;
+let schedOn     = false;
+let spinVariant = 0;
+let spinResult  = '';
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(async function init(){
+  await loadSubscription();
+  await loadAccounts();
+  renderHome();
+  syncCta();
+  setDefaultDt();
+  // Main button
+  tg.MainButton.setParams({text:'➕ Новое объявление', color:'#002F34', text_color:'#FFCE32'});
+  tg.MainButton.show();
+  tg.MainButton.onClick(() => goTo('create'));
+  // Check URL params
+  const p = new URLSearchParams(location.search);
+  if(p.get('page') === 'accounts') goTo('sub');
+})();
+
+async function loadSubscription(){
+  try {
+    const r = await fetch(`${API}/api/subscription`, { headers: AUTH });
+    if(r.ok) {
+      const d = await r.json();
+      sub = d;
+      updateSubBadge(d.is_active);
+      return;
+    }
+  } catch {}
+  // Fallback
+  sub = lsGet().sub || null;
+  updateSubBadge(!!sub?.is_active);
+}
+
+async function loadAccounts(){
+  try {
+    const r = await fetch(`${API}/api/accounts`, { headers: AUTH });
+    if(r.ok) { const d = await r.json(); accounts = d.accounts || []; }
+  } catch {}
+  renderAccountsSelect();
+}
+
+function updateSubBadge(active){
+  const el = document.getElementById('subBadge');
+  el.textContent = active ? 'Активна ✓' : 'Нет подписки';
+  el.className = 'hd-badge ' + (active ? 'active' : 'inactive');
+}
+
+// ── Tab routing ───────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => goTo(t.dataset.pg));
+});
+
+function goTo(pg){
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.pg===pg));
+  document.querySelectorAll('.pg').forEach(p => p.classList.toggle('on', p.id===`pg-${pg}`));
+  if(pg==='home')   renderHome();
+  if(pg==='ads')    renderAds(curFilter);
+  if(pg==='sched')  renderSchedule();
+  if(pg==='sub')    renderSub();
+}
+
+// ── HOME ─────────────────────────────────────────────────────────────────────
+function renderHome(){
+  const isActive = sub?.is_active;
+  document.getElementById('noSubWall').style.display  = isActive ? 'none' : 'block';
+  document.getElementById('homeStats').style.display  = isActive ? 'block' : 'none';
+  if(!isActive) return;
+
+  const ads  = getAds();
+  const now  = new Date();
+  const d    = ads.filter(a=>a.status==='draft').length;
+  const s    = ads.filter(a=>a.status==='scheduled').length;
+  const p    = ads.filter(a=>a.status==='published').length;
+  const f    = ads.filter(a=>a.status==='failed').length;
+  document.getElementById('h-draft').textContent = d;
+  document.getElementById('h-sched').textContent = s;
+  document.getElementById('h-pub').textContent   = p;
+  document.getElementById('h-fail').textContent  = f;
+
+  // Upcoming
+  const upcoming = ads.filter(a=>a.status==='scheduled')
+    .sort((a,b)=>new Date(a.publish_at)-new Date(b.publish_at)).slice(0,3);
+  const uEl = document.getElementById('homeUpcoming');
+  if(!upcoming.length){
+    uEl.innerHTML = `<div class="empty" style="padding:20px 10px">
+      <div class="empty-ico" style="font-size:32px">📭</div>
+      <div class="empty-sub">Нет запланированных публикаций</div></div>`;
+  } else {
+    uEl.innerHTML = upcoming.map(a=>adCardHtml(a, true)).join('');
+  }
+
+  // Recent
+  const recent = [...ads].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,3);
+  document.getElementById('homeRecent').innerHTML =
+    recent.length ? recent.map(a=>adCardHtml(a,true)).join('') :
+    `<div class="empty" style="padding:20px 10px">
+      <div class="empty-sub">Объявлений ещё нет</div></div>`;
+}
+
+// ── ADS LIST ─────────────────────────────────────────────────────────────────
+function renderAds(f){
+  curFilter = f;
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c.dataset.f===f));
+  const ads = getAds().filter(a=> f==='all' || a.status===f);
+  const el  = document.getElementById('adsList');
+  if(!ads.length){
+    el.innerHTML=`<div class="empty">
+      <div class="empty-ico">🔍</div>
+      <div class="empty-ttl">Пусто</div>
+      <div class="empty-sub">В этой категории объявлений нет</div>
+    </div>`; return;
+  }
+  el.innerHTML = ads.map(a=>adCardHtml(a)).join('');
+}
+
+document.querySelectorAll('.chip').forEach(c=>{
+  c.addEventListener('click',()=>renderAds(c.dataset.f));
+});
+
+// ── AD CARD HTML ─────────────────────────────────────────────────────────────
+const BADGES = {
+  draft:      ['b-draft','📝 Черновик'],
+  scheduled:  ['b-sched','⏰ Запланировано'],
+  published:  ['b-pub',  '✅ Опубликовано'],
+  failed:     ['b-fail', '❌ Ошибка'],
+  publishing: ['b-pub-ing','🔄 Публикуется'],
+};
+function adCardHtml(ad, compact=false){
+  const [bc,bl] = BADGES[ad.status]||BADGES.draft;
+  const dt = ad.publish_at
+    ? new Date(ad.publish_at).toLocaleString('ru',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
+    : '';
+  const spinMark = ad.spin_enabled ? `<span class="spin-dot" title="AI спин включён"></span>` : '';
+  return `
+  <div class="ad-card" style="flex-direction:column">
+    <div style="display:flex">
+      <div class="ad-thumb">🏠</div>
+      <div class="ad-body">
+        <div class="ad-title">${esc(ad.title)}</div>
+        <div class="ad-price">${ad.price ? esc(ad.price)+' '+esc(ad.currency||'UZS') : '—'}</div>
+        <div class="ad-meta">
+          ${ad.city?`<span>📍 ${esc(ad.city)}</span>`:''}
+          ${ad.rooms?`<span>🚪 ${esc(ad.rooms)} комн.</span>`:''}
+          ${ad.area?`<span>📐 ${esc(ad.area)} м²</span>`:''}
+          ${dt?`<span>🕐 ${dt}</span>`:''}
+        </div>
+        <div class="ad-status-row">
+          <span class="badge ${bc}">${bl}</span>
+          ${spinMark}
+        </div>
+      </div>
+    </div>
+    ${!compact?`<div class="ad-actions">
+      <button class="btn-xs btn-edit" onclick="editAd(${ad.id});event.stopPropagation()">✏️ Изменить</button>
+      ${ad.status==='draft'?`<button class="btn-xs btn-pub" onclick="scheduleAd(${ad.id});event.stopPropagation()">⏰ Запланировать</button>`:''}
+      ${ad.status==='draft'||ad.status==='failed'?`<button class="btn-xs btn-spin" onclick="spinAdText(${ad.id});event.stopPropagation()">🔄 Спин</button>`:''}
+      ${ad.olx_link?`<button class="btn-xs btn-pub" onclick="tg.openLink('${ad.olx_link}');event.stopPropagation()">🔗 OLX</button>`:''}
+      <button class="btn-xs btn-del" onclick="deleteAd(${ad.id});event.stopPropagation()">🗑</button>
+    </div>`:''}
+  </div>`;
+}
+
+// ── SCHEDULE ─────────────────────────────────────────────────────────────────
+function renderSchedule(){
+  const ads = getAds().filter(a=>a.status==='scheduled')
+    .sort((a,b)=>new Date(a.publish_at)-new Date(b.publish_at));
+  const el  = document.getElementById('schedList');
+  if(!ads.length){
+    el.innerHTML=`<div class="empty">
+      <div class="empty-ico">⏰</div>
+      <div class="empty-ttl">Расписание пусто</div>
+      <div class="empty-sub">Создай объявление и включи отложенную публикацию</div>
+    </div>`; return;
+  }
+  el.innerHTML = ads.map(ad=>{
+    const dt  = ad.publish_at ? new Date(ad.publish_at) : null;
+    const dts = dt ? dt.toLocaleString('ru',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+    const cd  = dt ? cdText(dt) : '';
+    return `
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--warn);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">
+        📅 ${dts}${cd?` · <span style="color:var(--blue)">${cd}</span>`:''}
+      </div>
+      ${adCardHtml(ad, false)}
+    </div>`;
+  }).join('');
+}
+
+// ── SUBSCRIPTION PAGE ─────────────────────────────────────────────────────────
+async function renderSub(){
+  const el = document.getElementById('subContent');
+  const isActive = sub?.is_active;
+
+  if(isActive && sub?.sub){
+    const s    = sub.sub;
+    const plan = sub.plan_info || {};
+    const lim  = plan.ads_per_month === -1 ? '∞' : plan.ads_per_month;
+    const slim = plan.spin_per_month === -1 ? '∞' : plan.spin_per_month;
+    el.innerHTML = `
+    <div class="sub-info-card">
+      <div class="sub-info-plan">${plan.name||'—'}</div>
+      <div class="sub-info-date">Активна до ${(s.expires_at||'').slice(0,10)}</div>
+      <div class="sub-info-stats">
+        <div class="sub-stat">
+          <div class="sub-stat-n">${s.ads_used||0}/${lim}</div>
+          <div class="sub-stat-l">объявлений в мес.</div>
+        </div>
+        <div class="sub-stat">
+          <div class="sub-stat-n">${s.spins_used||0}/${slim}</div>
+          <div class="sub-stat-l">AI спинов в мес.</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div class="sec-ttl" style="margin-bottom:10px">OLX аккаунты (${accounts.length}/${plan.accounts||1})</div>
+      ${accounts.map(a=>`
+        <div class="acc-card">
+          <div class="acc-avatar">${(a.label||'O')[0].toUpperCase()}</div>
+          <div class="acc-info">
+            <div class="acc-label">${esc(a.label||'Аккаунт')}</div>
+            <div class="acc-email">${esc(a.email||'')}</div>
+          </div>
+          <span class="acc-del" onclick="deleteAccount(${a.id})">🗑</span>
+        </div>`).join('')}
+      ${accounts.length < (plan.accounts||1) ? `
+        <button onclick="document.getElementById('addAccModal').classList.add('on')"
+          style="width:100%;padding:12px;border:2px dashed var(--border);border-radius:var(--r);background:transparent;color:var(--blue);font-family:'Geologica',sans-serif;font-weight:700;font-size:13px;cursor:pointer">
+          ➕ Добавить OLX аккаунт
+        </button>` : ''}
+    </div>
+    <button onclick="goTo('sub');renderPlans()" style="width:100%;padding:12px;border:none;border-radius:var(--r);background:var(--bg);color:var(--olx);font-family:'Geologica',sans-serif;font-weight:700;font-size:14px;cursor:pointer;border:2px solid var(--olx)">
+      🔄 Сменить тариф
+    </button>`;
+  } else {
+    renderPlans();
+  }
+}
+
+async function renderPlans(){
+  const el = document.getElementById('subContent');
+  let plans = sub?.plans || {};
+
+  // Fallback планы если API недоступен
+  if(!Object.keys(plans).length) plans = {
+    basic:    {name:'Базовый',price_month:99000,ads_per_month:50,spin_per_month:50,accounts:1},
+    pro:      {name:'Про',price_month:249000,ads_per_month:200,spin_per_month:200,accounts:3},
+    business: {name:'Бизнес',price_month:599000,ads_per_month:-1,spin_per_month:-1,accounts:10},
+  };
+
+  const colors  = {basic:'#6B7280',pro:'#3B82F6',business:'#F59E0B'};
+  const popular = 'pro';
+
+  el.innerHTML = `
+  <div style="font-size:16px;font-weight:700;margin-bottom:14px">💳 Выберите тариф</div>
+  <div class="plans-grid">
+    ${Object.entries(plans).map(([key,p])=>{
+      const lim  = p.ads_per_month === -1 ? '∞' : p.ads_per_month;
+      const slim = p.spin_per_month === -1 ? '∞' : p.spin_per_month;
+      const price = (p.price_month||0).toLocaleString('ru');
+      return `
+      <div class="plan-card" style="--plan-color:${colors[key]||'#666'}" onclick="selectPlan('${key}')">
+        ${key===popular?`<div class="plan-badge">Популярный</div>`:''}
+        <div class="plan-name">${p.name}</div>
+        <div class="plan-price">${price} <span>сум/мес</span></div>
+        <div class="plan-features">
+          <div class="plan-feat">${lim} объявлений в месяц</div>
+          <div class="plan-feat">${slim} AI спинов в месяц</div>
+          <div class="plan-feat">До ${p.accounts} OLX аккаунтов</div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+let selectedPlan = '';
+function selectPlan(key){
+  selectedPlan = key;
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+
+  const el = document.getElementById('subContent');
+  const plans = sub?.plans || {};
+  const p = plans[key] || {};
+  const price = (p.price_month||0).toLocaleString('ru');
+
+  // Append payment methods
+  const existing = document.getElementById('payMethods');
+  if(existing) existing.remove();
+
+  const div = document.createElement('div');
+  div.id = 'payMethods';
+  div.innerHTML = `
+  <div style="font-size:14px;font-weight:700;margin:16px 0 10px">Способ оплаты — ${price} сум</div>
+  <div class="pay-methods">
+    <div class="pay-method" onclick="initPayment('${key}','click')">
+      <div class="pay-icon">💳</div>
+      <div class="pay-info"><div class="pay-name">Click.uz</div><div class="pay-sub">Мгновенная оплата</div></div>
+      <div class="pay-arr">›</div>
+    </div>
+    <div class="pay-method" onclick="initPayment('${key}','payme')">
+      <div class="pay-icon">💳</div>
+      <div class="pay-info"><div class="pay-name">Payme</div><div class="pay-sub">Мгновенная оплата</div></div>
+      <div class="pay-arr">›</div>
+    </div>
+    <div class="pay-method" onclick="initPayment('${key}','manual')">
+      <div class="pay-icon">📲</div>
+      <div class="pay-info"><div class="pay-name">Ручная оплата</div><div class="pay-sub">Перевод + подтверждение</div></div>
+      <div class="pay-arr">›</div>
+    </div>
+  </div>`;
+  el.appendChild(div);
+  div.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+async function initPayment(plan, method){
+  try {
+    const r = await fetch(`${API}/api/payment/init`, {
+      method: 'POST', headers: AUTH,
+      body: JSON.stringify({plan, method}),
+    });
+    const d = await r.json();
+    if(d.url) {
+      tg.openLink(d.url);
+    } else if(d.message) {
+      tg.showAlert(d.message);
+    }
+    tg.sendData(JSON.stringify({action:'payment_init', plan, method, payment_id: d.payment_id}));
+  } catch(e) {
+    // Fallback: отправляем в бот
+    tg.sendData(JSON.stringify({action:'subscribe', plan, method}));
+    toast('Запрос отправлен в бот!');
+  }
+}
+
+// ── FORM ─────────────────────────────────────────────────────────────────────
+function setDefaultDt(){
+  const d = new Date(Date.now() + 86400000); d.setSeconds(0,0);
+  document.getElementById('f-dt').value = d.toISOString().slice(0,16);
+}
+
+function renderAccountsSelect(){
+  const sel = document.getElementById('f-account');
+  sel.innerHTML = accounts.length
+    ? `<option value="">— Выберите аккаунт —</option>`
+      + accounts.map(a=>`<option value="${a.id}">${esc(a.label||a.email)}</option>`).join('')
+    : `<option value="">— Нет аккаунтов —</option>`;
+}
+
+// Spin toggle
+document.getElementById('spinToggle').addEventListener('click', ()=>{
+  spinOn = !spinOn;
+  document.getElementById('spinSw').classList.toggle('on', spinOn);
+  document.getElementById('spinPanel').style.display = spinOn ? 'block' : 'none';
+});
+document.querySelectorAll('.spin-var').forEach(v=>{
+  v.addEventListener('click', ()=>{
+    document.querySelectorAll('.spin-var').forEach(x=>x.classList.remove('on'));
+    v.classList.add('on');
+    spinVariant = parseInt(v.dataset.v);
+  });
+});
+
+// Schedule toggle
+document.getElementById('schedToggle').addEventListener('click', ()=>{
+  schedOn = !schedOn;
+  document.getElementById('schedSw').classList.toggle('on', schedOn);
+  document.getElementById('schedPanel').classList.toggle('on', schedOn);
+  syncCta();
+});
+
+function syncCta(){
+  const btn   = document.getElementById('ctaBtn');
+  const editId= document.getElementById('f-id').value;
+  if(editId)  { btn.textContent='✏️ Сохранить изменения'; btn.className='cta'; return; }
+  if(schedOn) { btn.textContent='⏰ Запланировать публикацию'; btn.className='cta sched'; }
+  else        { btn.textContent='💾 Сохранить черновик';      btn.className='cta'; }
+}
+
+// ── SPIN ─────────────────────────────────────────────────────────────────────
+async function doSpin(){
+  const text = document.getElementById('f-desc').value.trim();
+  if(!text){ toast('Введите текст описания', false, true); return; }
+
+  const prev = document.getElementById('spinPreview');
+  const res  = document.getElementById('spinResult');
+  prev.style.display = 'block';
+  res.innerHTML = `<div class="spin-loading"><span class="spin-dot-anim">🔄</span> AI перефразирует текст...</div>`;
+
+  try {
+    const r = await fetch(`${API}/api/spin`, {
+      method: 'POST', headers: AUTH,
+      body: JSON.stringify({
+        text, variant: spinVariant, ad_id: null,
+        with_title: false,
+      }),
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const d = await r.json();
+    spinResult = d.text;
+    res.textContent = spinResult;
+    toast('✅ Текст перефразирован!');
+  } catch(e) {
+    // Fallback: простая перестановка абзацев (демо без API)
+    const paras = text.split('\n').filter(Boolean);
+    spinResult  = [...paras].reverse().join('\n');
+    res.textContent = spinResult + '\n\n[Demo: подключи Claude API для настоящего спина]';
+    toast('⚠️ Demo-режим');
+  }
+}
+
+function applySpinResult(){
+  if(spinResult){
+    document.getElementById('f-desc').value = spinResult;
+    toast('✅ Применено!');
+  }
+}
+
+async function spinAdText(adId){
+  const ad = getAds().find(a=>a.id===adId);
+  if(!ad) return;
+  const text = ad.description || '';
+  if(!text){ toast('Нет текста для спина', false, true); return; }
+  toast('🔄 Спиним...');
+  try {
+    const r = await fetch(`${API}/api/spin`, {
+      method: 'POST', headers: AUTH,
+      body: JSON.stringify({text, variant: 0, ad_id: adId}),
+    });
+    const d = await r.json();
+    const ads = getAds();
+    const idx = ads.findIndex(a=>a.id===adId);
+    if(idx>=0){ ads[idx].description = d.text; saveAds(ads); }
+    toast('✅ Текст перефразирован!');
+    renderAds(curFilter);
+  } catch(e) {
+    toast('Ошибка спина: ' + e.message, false, true);
+  }
+}
+
+// ── SUBMIT ────────────────────────────────────────────────────────────────────
+function submitAd(){
+  const title = document.getElementById('f-title').value.trim();
+  if(!title){ toast('Укажите заголовок', false, true); return; }
+  if(schedOn && !document.getElementById('f-dt').value){
+    toast('Выберите дату публикации', false, true); return;
+  }
+
+  const editId = document.getElementById('f-id').value;
+  const ads    = getAds();
+  const ad = {
+    id:          editId ? parseInt(editId) : nextId(),
+    title,
+    description: document.getElementById('f-desc').value.trim(),
+    price:       document.getElementById('f-price').value.trim(),
+    currency:    document.getElementById('f-currency').value,
+    phone:       document.getElementById('f-phone').value.trim(),
+    category:    document.getElementById('f-cat').value,
+    city:        document.getElementById('f-city').value,
+    district:    document.getElementById('f-district').value.trim(),
+    rooms:       document.getElementById('f-rooms').value,
+    floor:       document.getElementById('f-floor').value.trim(),
+    area:        document.getElementById('f-area').value.trim(),
+    account_id:  document.getElementById('f-account').value || null,
+    status:      schedOn ? 'scheduled' : 'draft',
+    publish_at:  schedOn ? document.getElementById('f-dt').value : null,
+    spin_enabled:spinOn,
+    created_at:  new Date().toISOString(),
+    images:      [],
+  };
+
+  if(editId){
+    const i = ads.findIndex(a=>a.id===ad.id);
+    if(i>=0) ads[i]={...ads[i],...ad}; else ads.push(ad);
+  } else { ads.push(ad); }
+  saveAds(ads);
+
+  tg.sendData(JSON.stringify({...ad, action: editId?'update':'create'}));
+  toast(editId ? '✅ Изменения сохранены!' : schedOn ? '⏰ Запланировано!' : '💾 Черновик сохранён!');
+  resetForm();
+
+  // Navigate
+  const dest = schedOn ? 'sched' : 'ads';
+  setTimeout(()=>{ goTo(dest); }, 900);
+}
+
+function resetForm(){
+  ['f-title','f-desc','f-price','f-phone','f-floor','f-area','f-district','f-id'].forEach(i=>{
+    const el=document.getElementById(i); if(el) el.value='';
+  });
+  ['f-currency','f-cat','f-city','f-rooms'].forEach(i=>{
+    const el=document.getElementById(i); if(el) el.value='';
+  });
+  document.getElementById('f-currency').value='UZS';
+  spinOn=false; schedOn=false; spinResult='';
+  document.getElementById('spinSw').classList.remove('on');
+  document.getElementById('schedSw').classList.remove('on');
+  document.getElementById('spinPanel').style.display='none';
+  document.getElementById('schedPanel').classList.remove('on');
+  document.getElementById('spinPreview').style.display='none';
+  syncCta(); setDefaultDt();
+}
+
+function editAd(id){
+  const ad = getAds().find(a=>a.id===id);
+  if(!ad) return;
+  document.getElementById('f-id').value       = ad.id;
+  document.getElementById('f-title').value    = ad.title;
+  document.getElementById('f-desc').value     = ad.description||'';
+  document.getElementById('f-price').value    = ad.price||'';
+  document.getElementById('f-currency').value = ad.currency||'UZS';
+  document.getElementById('f-phone').value    = ad.phone||'';
+  document.getElementById('f-cat').value      = ad.category||'';
+  document.getElementById('f-city').value     = ad.city||'';
+  document.getElementById('f-district').value = ad.district||'';
+  document.getElementById('f-rooms').value    = ad.rooms||'';
+  document.getElementById('f-floor').value    = ad.floor||'';
+  document.getElementById('f-area').value     = ad.area||'';
+  if(ad.account_id) document.getElementById('f-account').value = ad.account_id;
+  if(ad.publish_at){
+    schedOn=true;
+    document.getElementById('schedSw').classList.add('on');
+    document.getElementById('schedPanel').classList.add('on');
+    document.getElementById('f-dt').value = ad.publish_at;
+  }
+  spinOn = !!ad.spin_enabled;
+  document.getElementById('spinSw').classList.toggle('on', spinOn);
+  document.getElementById('spinPanel').style.display = spinOn ? 'block' : 'none';
+  syncCta(); goTo('create');
+  setTimeout(()=>window.scrollTo(0,0), 100);
+}
+
+function scheduleAd(id){
+  editAd(id);
+  schedOn=true;
+  document.getElementById('schedSw').classList.add('on');
+  document.getElementById('schedPanel').classList.add('on');
+  syncCta();
+}
+
+function deleteAd(id){
+  tg.showConfirm('Удалить объявление?', ok=>{
+    if(!ok) return;
+    saveAds(getAds().filter(a=>a.id!==id));
+    tg.sendData(JSON.stringify({action:'delete',id}));
+    toast('🗑 Удалено');
+    renderAds(curFilter); renderHome(); renderSchedule();
+  });
+}
+
+// ── ACCOUNTS ─────────────────────────────────────────────────────────────────
+async function addAccount(){
+  const label = document.getElementById('m-label').value.trim()||'Аккаунт';
+  const email = document.getElementById('m-email').value.trim();
+  const pass  = document.getElementById('m-pass').value.trim();
+  if(!email||!pass){ toast('Заполните email и пароль', false, true); return; }
+  try {
+    const r = await fetch(`${API}/api/accounts`, {
+      method:'POST', headers: AUTH,
+      body: JSON.stringify({label, email, password: pass}),
+    });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.detail||'Ошибка');
+    toast('✅ Аккаунт добавлен!');
+    closeModal('addAccModal');
+    await loadAccounts();
+    renderSub();
+  } catch(e){
+    toast(e.message, false, true);
+  }
+}
+
+async function deleteAccount(id){
+  tg.showConfirm('Удалить OLX аккаунт?', async ok=>{
+    if(!ok) return;
+    await fetch(`${API}/api/accounts/${id}`, {method:'DELETE', headers:AUTH});
+    await loadAccounts(); renderSub();
+    toast('🗑 Аккаунт удалён');
+  });
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+function cdText(dt){
+  const ms = dt-Date.now();
+  if(ms<0) return 'публикуется...';
+  const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000);
+  if(h>48) return `через ${Math.floor(h/24)} д.`;
+  if(h>0)  return `через ${h}ч ${m}м`;
+  return `через ${m} мин`;
+}
+
+function toast(msg, ok=true, err=false){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast on' + (err?' err':ok?' ok':'');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('on'), 2500);
+}
+
+function closeModal(id){
+  document.getElementById(id).classList.remove('on');
+}
+
+// ── Auto-publish check (client-side) ─────────────────────────────────────────
+setInterval(()=>{
+  const ads = getAds(); let changed=false;
+  ads.forEach(a=>{
+    if(a.status==='scheduled' && a.publish_at && new Date(a.publish_at)<=new Date()){
+      a.status='publishing'; changed=true;
+      toast(`🔄 «${a.title.slice(0,20)}...» публикуется`);
+    }
+  });
+  if(changed){ saveAds(ads); renderHome(); }
+}, 30000);
+</script>
+</body>
+</html>
