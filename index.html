@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
 <title>OLX Scheduler</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -44,6 +44,75 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  /* iOS safe area снизу */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── iOS Safe Area — шапка уезжает под Dynamic Island / notch ── */
+.hd {
+  padding-top: max(0px, env(safe-area-inset-top, 0px));
+  height: calc(52px + env(safe-area-inset-top, 0px));
+}
+.tabs {
+  top: calc(52px + env(safe-area-inset-top, 0px));
+}
+
+/* ══════════════════════════════════════════════════════
+   ПК / ПЛАНШЕТ — медиазапросы
+   ══════════════════════════════════════════════════════ */
+@media (min-width: 600px) {
+  body {
+    max-width: 780px;
+    margin: 0 auto;
+    box-shadow: 0 0 40px rgba(0,0,0,.1);
+    min-height: 100vh;
+  }
+
+  .hd {
+    padding: 0 28px;
+    height: 60px;
+    padding-top: 0;
+  }
+  .hd-logo { font-size: 20px; }
+
+  .tabs { top: 60px; }
+  .tab { font-size: 11px; padding: 14px 10px 13px; }
+  .tab .ti { font-size: 20px; }
+
+  .pg { padding: 20px 24px 100px; }
+
+  /* Форма — два блока в ряд на ПК */
+  .form-row-pc {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .stat-row { grid-template-columns: repeat(4, 1fr); }
+
+  .checks-grid { grid-template-columns: repeat(3, 1fr); }
+
+  .photo-grid { grid-template-columns: repeat(4, 1fr); }
+
+  .plan-card { padding: 20px 22px; }
+  .plan-name { font-size: 18px; }
+  .plan-price { font-size: 24px; }
+
+  .ad-card { flex-direction: row !important; }
+  .ad-thumb { width: 110px !important; height: 110px !important; }
+
+  .cta { font-size: 16px; padding: 16px; }
+  .cta-wrap { max-width: 780px; left: 50%; transform: translateX(-50%); right: auto; width: 100%; }
+
+  .modal { border-radius: 16px; max-width: 480px; margin: auto; position: relative; }
+  .modal-bg { align-items: center; justify-content: center; }
+}
+
+@media (min-width: 1024px) {
+  body { max-width: 900px; }
+  .cta-wrap { max-width: 900px; }
+  .pg { padding: 24px 32px 100px; }
+  .checks-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 /* ── Header ── */
@@ -74,7 +143,10 @@ body {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   display: flex; overflow-x: auto;
-  scrollbar-width: none; position: sticky; top: 52px; z-index: 100;
+  scrollbar-width: none;
+  position: sticky;
+  top: calc(52px + env(safe-area-inset-top, 0px));
+  z-index: 100;
 }
 .tabs::-webkit-scrollbar { display: none; }
 .tab {
@@ -336,7 +408,7 @@ input[type="datetime-local"] { color-scheme: light; }
 /* ── Sticky CTA ── */
 .cta-wrap {
   position: fixed; bottom: 0; left: 0; right: 0;
-  padding: 10px 14px 14px;
+  padding: 10px 14px calc(14px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(transparent, var(--bg) 30%);
   z-index: 100;
 }
@@ -1463,7 +1535,10 @@ document.getElementById('negotiableToggle').addEventListener('click', ()=>{
 
 // ── CHECKBOXES ────────────────────────────────────────────────────────────────
 document.querySelectorAll('.chk-item').forEach(item=>{
-  item.addEventListener('click', ()=> item.classList.toggle('checked'));
+  item.addEventListener('click', (e)=>{
+    e.preventDefault(); // блокируем нативный checkbox
+    item.classList.toggle('checked');
+  });
 });
 
 function getChecked(gridId){
