@@ -408,6 +408,86 @@ input[type="datetime-local"] { color-scheme: light; }
 .acc-email { font-size: 12px; color: var(--muted); margin-top: 2px; }
 .acc-del { color: var(--danger); font-size: 18px; cursor: pointer; padding: 4px; }
 
+/* ── Checkbox Grid ── */
+.checks-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.chk-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: var(--r-sm); cursor: pointer;
+  font-size: 12px; font-weight: 500;
+  transition: all .15s; user-select: none;
+}
+.chk-item:active { background: #E8F5F5; }
+.chk-item input[type="checkbox"] { display: none; }
+.chk-item.checked {
+  background: #E8F5F5;
+  border-color: var(--olx);
+  color: var(--olx);
+  font-weight: 700;
+}
+.chk-item.checked::before {
+  content: '✓';
+  color: var(--olx);
+  font-weight: 800;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+/* ── Photo Upload ── */
+.photo-block {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px; margin-bottom: 12px;
+}
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.photo-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--bg);
+}
+.photo-item img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.photo-item-del {
+  position: absolute; top: 4px; right: 4px;
+  width: 22px; height: 22px;
+  background: rgba(0,0,0,.6); color: #fff;
+  border-radius: 50%; border: none; cursor: pointer;
+  font-size: 12px; display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+}
+.photo-add {
+  aspect-ratio: 1;
+  border-radius: var(--r-sm);
+  border: 2px dashed var(--border);
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; gap: 4px;
+  transition: border-color .2s, background .2s;
+}
+.photo-add:active { background: #E8F5F5; border-color: var(--olx); }
+.photo-add-ico { font-size: 22px; }
+.photo-add-lbl { font-size: 10px; font-weight: 600; color: var(--muted); }
+.photo-hint {
+  font-size: 11px; color: var(--muted);
+  display: flex; align-items: center; gap: 5px;
+}
+.photo-count { font-weight: 700; color: var(--olx); }
+#photoFileInput { display: none; }
+
 /* ── Subscription page ── */
 .sub-info-card {
   background: linear-gradient(135deg, var(--olx), #0d5c63);
@@ -474,82 +554,260 @@ input[type="datetime-local"] { color-scheme: light; }
 
 <!-- ═══ CREATE ═══ -->
 <div class="pg" id="pg-create">
+
+  <!-- ФОТО -->
+  <div class="photo-block">
+    <div class="form-ttl">📸 Фотографии</div>
+    <div class="photo-grid" id="photoGrid">
+      <div class="photo-add" onclick="document.getElementById('photoFileInput').click()">
+        <div class="photo-add-ico">📷</div>
+        <div class="photo-add-lbl">Добавить</div>
+      </div>
+    </div>
+    <input type="file" id="photoFileInput" accept="image/*" multiple/>
+    <div class="photo-hint">
+      <span class="photo-count" id="photoCountText">0/8 фото</span>
+      · Первое фото — главное на OLX
+    </div>
+  </div>
+
+  <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
   <div class="form-block">
     <div class="form-ttl">📌 Основная информация</div>
     <div class="fld">
       <label>Заголовок *</label>
-      <input id="f-title" type="text" placeholder="3-комн. кв., 85м², Юнусабад, 5/9" maxlength="70"/>
+      <input id="f-title" type="text" placeholder="3-комн. кв., 85м², Юнусабад, 5/9 эт." maxlength="70"/>
     </div>
-    <div class="fld-2">
-      <div class="fld">
-        <label>Цена</label>
-        <input id="f-price" type="text" placeholder="130 000"/>
-      </div>
-      <div class="fld">
-        <label>Валюта</label>
-        <select id="f-currency">
+
+    <!-- Цена -->
+    <div class="fld">
+      <label>Цена</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="f-price" type="text" placeholder="130 000" style="flex:1" id="f-price"/>
+        <select id="f-currency" style="width:90px;padding:10px 8px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-family:'Geologica',sans-serif;font-size:14px;outline:none;-webkit-appearance:none">
+          <option value="USD" selected>USD</option>
           <option value="UZS">сум</option>
-          <option value="USD">USD</option>
         </select>
       </div>
     </div>
+
+    <!-- Цена договорная -->
+    <div class="sw-row" id="negotiableToggle" style="margin-bottom:12px">
+      <div class="sw-lbl">
+        <b>Цена договорная</b>
+        <span>Скрыть цену, показать «Договорная»</span>
+      </div>
+      <div class="sw" id="negotiableSw"></div>
+    </div>
+
+    <!-- Телефон -->
     <div class="fld">
       <label>Телефон</label>
-      <input id="f-phone" type="tel" placeholder="+998 90 000 00 00"/>
+      <input id="f-phone" type="tel" placeholder="+998 90 000 00 00" value="+998 "/>
     </div>
   </div>
 
+  <!-- РАСПОЛОЖЕНИЕ -->
+  <div class="form-block">
+    <div class="form-ttl">📍 Расположение</div>
+    <div class="fld">
+      <label>Город</label>
+      <select id="f-city" onchange="onCityChange()">
+        <option value="">— Выберите город —</option>
+        <option value="Ташкент">Ташкент</option>
+        <option value="Самарканд">Самарканд</option>
+        <option value="Бухара">Бухара</option>
+        <option value="Наманган">Наманган</option>
+        <option value="Андижан">Андижан</option>
+        <option value="Фергана">Фергана</option>
+        <option value="Нукус">Нукус</option>
+        <option value="Карши">Карши</option>
+        <option value="Термез">Термез</option>
+        <option value="Навои">Навои</option>
+        <option value="Ургенч">Ургенч</option>
+        <option value="Гулистан">Гулистан</option>
+      </select>
+    </div>
+    <div class="fld" id="districtWrap">
+      <label>Район</label>
+      <select id="f-district">
+        <option value="">— Сначала выберите город —</option>
+      </select>
+    </div>
+    <div class="fld">
+      <label>Адрес / ориентир</label>
+      <input id="f-address" type="text" placeholder="ул. Амира Темура, 7 квартал"/>
+    </div>
+  </div>
+
+  <!-- ПАРАМЕТРЫ НЕДВИЖИМОСТИ -->
   <div class="form-block">
     <div class="form-ttl">🏢 Параметры недвижимости</div>
+
     <div class="fld-2">
-      <div class="fld">
-        <label>Комнат</label>
-        <select id="f-rooms">
-          <option value="">—</option>
-          <option>1</option><option>2</option><option>3</option>
-          <option>4</option><option>5+</option>
-        </select>
-      </div>
-      <div class="fld">
-        <label>Площадь (м²)</label>
-        <input id="f-area" type="text" placeholder="85"/>
-      </div>
-    </div>
-    <div class="fld-2">
-      <div class="fld">
-        <label>Этаж</label>
-        <input id="f-floor" type="text" placeholder="5/9"/>
-      </div>
       <div class="fld">
         <label>Категория</label>
         <select id="f-cat">
           <option value="">—</option>
           <option>Квартиры</option>
           <option>Дома и дачи</option>
-          <option>Коммерческая недвижимость</option>
+          <option>Коммерческая</option>
           <option>Земельные участки</option>
-          <option>Новостройки</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Тип жилья</label>
+        <select id="f-housing-type">
+          <option value="">—</option>
+          <option value="new">Новостройка</option>
+          <option value="secondary">Вторичный рынок</option>
         </select>
       </div>
     </div>
+
     <div class="fld-2">
       <div class="fld">
-        <label>Город</label>
-        <select id="f-city">
+        <label>Комнат</label>
+        <select id="f-rooms">
           <option value="">—</option>
-          <option>Ташкент</option><option>Самарканд</option>
-          <option>Бухара</option><option>Наманган</option>
-          <option>Андижан</option><option>Фергана</option>
-          <option>Нукус</option><option>Карши</option>
+          <option>1</option><option>2</option><option>3</option>
+          <option>4</option><option>5</option><option>6+</option>
         </select>
       </div>
       <div class="fld">
-        <label>Район</label>
-        <input id="f-district" type="text" placeholder="Юнусабад"/>
+        <label>Площадь общая (м²)</label>
+        <input id="f-area" type="text" placeholder="85"/>
+      </div>
+    </div>
+
+    <div class="fld-2">
+      <div class="fld">
+        <label>Жилая площадь (м²)</label>
+        <input id="f-area-living" type="text" placeholder="60"/>
+      </div>
+      <div class="fld">
+        <label>Площадь кухни (м²)</label>
+        <input id="f-area-kitchen" type="text" placeholder="12"/>
+      </div>
+    </div>
+
+    <div class="fld-2">
+      <div class="fld">
+        <label>Этаж</label>
+        <input id="f-floor" type="text" placeholder="5"/>
+      </div>
+      <div class="fld">
+        <label>Этажей в доме</label>
+        <input id="f-floors-total" type="text" placeholder="9"/>
+      </div>
+    </div>
+
+    <div class="fld-2">
+      <div class="fld">
+        <label>Тип строения</label>
+        <select id="f-building-type">
+          <option value="">—</option>
+          <option>Кирпичный</option>
+          <option>Панельный</option>
+          <option>Монолитный</option>
+          <option>Блочный</option>
+          <option>Деревянный</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Планировка</label>
+        <select id="f-layout">
+          <option value="">—</option>
+          <option>Улучшенная</option>
+          <option>Стандартная</option>
+          <option>Студия</option>
+          <option>Свободная</option>
+          <option>Пентхаус</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fld-2">
+      <div class="fld">
+        <label>Год постройки</label>
+        <input id="f-year" type="text" placeholder="2018"/>
+      </div>
+      <div class="fld">
+        <label>Санузел</label>
+        <select id="f-bathroom">
+          <option value="">—</option>
+          <option>Совмещённый</option>
+          <option>Раздельный</option>
+          <option>2 санузла</option>
+          <option>3 и более</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fld-2">
+      <div class="fld">
+        <label>Ремонт</label>
+        <select id="f-renovation">
+          <option value="">—</option>
+          <option>Евроремонт</option>
+          <option>Хороший</option>
+          <option>Косметический</option>
+          <option>Требует ремонта</option>
+          <option>Черновая отделка</option>
+          <option>Без отделки</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>Мебель</label>
+        <select id="f-furniture">
+          <option value="">—</option>
+          <option>Меблирована</option>
+          <option>Частично меблирована</option>
+          <option>Без мебели</option>
+        </select>
       </div>
     </div>
   </div>
 
+  <!-- УДОБСТВА -->
+  <div class="form-block">
+    <div class="form-ttl">✅ Удобства в квартире</div>
+    <div class="checks-grid" id="amenitiesGrid">
+      <label class="chk-item"><input type="checkbox" value="internet"/> Интернет</label>
+      <label class="chk-item"><input type="checkbox" value="phone"/> Телефон</label>
+      <label class="chk-item"><input type="checkbox" value="fridge"/> Холодильник</label>
+      <label class="chk-item"><input type="checkbox" value="cable_tv"/> Кабельное ТВ</label>
+      <label class="chk-item"><input type="checkbox" value="washer"/> Стиральная машина</label>
+      <label class="chk-item"><input type="checkbox" value="kitchen"/> Кухня</label>
+      <label class="chk-item"><input type="checkbox" value="balcony"/> Балкон</label>
+      <label class="chk-item"><input type="checkbox" value="tv"/> Телевизор</label>
+      <label class="chk-item"><input type="checkbox" value="ac"/> Кондиционер</label>
+      <label class="chk-item"><input type="checkbox" value="gas"/> Газ</label>
+      <label class="chk-item"><input type="checkbox" value="elevator"/> Лифт</label>
+      <label class="chk-item"><input type="checkbox" value="security"/> Охрана/домофон</label>
+    </div>
+  </div>
+
+  <!-- ИНФРАСТРУКТУРА -->
+  <div class="form-block">
+    <div class="form-ttl">🏙 Рядом есть</div>
+    <div class="checks-grid" id="infraGrid">
+      <label class="chk-item"><input type="checkbox" value="hospital"/> 🏥 Больница/поликлиника</label>
+      <label class="chk-item"><input type="checkbox" value="playground"/> 🛝 Детская площадка</label>
+      <label class="chk-item"><input type="checkbox" value="kindergarten"/> 🏫 Детский сад</label>
+      <label class="chk-item"><input type="checkbox" value="bus_stop"/> 🚌 Остановка</label>
+      <label class="chk-item"><input type="checkbox" value="metro"/> 🚇 Метро</label>
+      <label class="chk-item"><input type="checkbox" value="park"/> 🌳 Парк/зелёная зона</label>
+      <label class="chk-item"><input type="checkbox" value="school"/> 🏫 Школа</label>
+      <label class="chk-item"><input type="checkbox" value="supermarket"/> 🛒 Супермаркет</label>
+      <label class="chk-item"><input type="checkbox" value="korzinka"/> 🧺 Корзинка/МКО</label>
+      <label class="chk-item"><input type="checkbox" value="parking"/> 🅿️ Парковка/стоянка</label>
+      <label class="chk-item"><input type="checkbox" value="cafe"/> ☕ Ресторан/кафе</label>
+      <label class="chk-item"><input type="checkbox" value="bank"/> 🏦 Банк/банкомат</label>
+    </div>
+  </div>
+
+  <!-- ОПИСАНИЕ -->
   <div class="form-block">
     <div class="form-ttl">📝 Описание</div>
     <div class="fld">
@@ -565,7 +823,6 @@ input[type="datetime-local"] { color-scheme: light; }
       </div>
       <div class="sw" id="spinSw"></div>
     </div>
-
     <div id="spinPanel" style="display:none">
       <div class="spin-box">
         <div class="spin-box-ttl">Стиль перефразирования:</div>
@@ -575,20 +832,17 @@ input[type="datetime-local"] { color-scheme: light; }
           <div class="spin-var" data-v="2">С другого угла</div>
           <div class="spin-var" data-v="3">Детальный</div>
         </div>
-        <button onclick="doSpin()" style="width:100%;padding:8px;border-radius:8px;border:none;background:#512DA8;color:#fff;font-family:'Geologica',sans-serif;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:8px">
-          ✨ Перефразировать
-        </button>
+        <button onclick="doSpin()" style="width:100%;padding:8px;border-radius:8px;border:none;background:#512DA8;color:#fff;font-family:'Geologica',sans-serif;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:8px">✨ Перефразировать</button>
         <div id="spinPreview" style="display:none">
           <div style="font-size:11px;color:#512DA8;font-weight:700;margin-bottom:5px">Результат:</div>
           <div class="spin-preview" id="spinResult"></div>
-          <button onclick="applySpinResult()" style="width:100%;padding:7px;border-radius:8px;border:none;background:#fff;color:#512DA8;font-family:'Geologica',sans-serif;font-weight:700;font-size:12px;cursor:pointer;margin-top:8px;border:1.5px solid #D1C4E9">
-            ✅ Применить
-          </button>
+          <button onclick="applySpinResult()" style="width:100%;padding:7px;border-radius:8px;border:none;background:#fff;color:#512DA8;font-family:'Geologica',sans-serif;font-weight:700;font-size:12px;cursor:pointer;margin-top:8px;border:1.5px solid #D1C4E9">✅ Применить</button>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- ПУБЛИКАЦИЯ -->
   <div class="form-block">
     <div class="form-ttl">⏰ Публикация</div>
     <div class="fld">
@@ -606,10 +860,10 @@ input[type="datetime-local"] { color-scheme: light; }
     </div>
     <div class="sched-panel" id="schedPanel">
       <div class="fld">
-        <label>Дата и время</label>
+        <label>Дата и время (Ташкент)</label>
         <input type="datetime-local" id="f-dt"/>
       </div>
-      <div class="sched-hint">⏰ Бот запустит браузер и автоматически опубликует объявление в указанное время</div>
+      <div class="sched-hint">⏰ Бот опубликует объявление автоматически в указанное время</div>
     </div>
   </div>
 
@@ -672,7 +926,33 @@ input[type="datetime-local"] { color-scheme: light; }
 
 <script>
 const tg   = window.Telegram.WebApp;
-tg.ready(); tg.expand();
+tg.ready();
+tg.expand();
+// Полный экран
+if(tg.requestFullscreen) tg.requestFullscreen();
+
+const TZ = 'Asia/Tashkent';
+
+// Возвращает текущее время в Ташкенте как Date
+function nowTZ(){
+  return new Date(new Date().toLocaleString('en-US', {timeZone: TZ}));
+}
+
+// Форматирует дату с учётом Ташкента
+function formatDT(isoStr, opts={}){
+  if(!isoStr) return '—';
+  return new Date(isoStr).toLocaleString('ru', {timeZone: TZ, ...opts});
+}
+
+// Возвращает строку для datetime-local input (завтра, Ташкент)
+function tomorrowTZ(){
+  const d = nowTZ();
+  d.setDate(d.getDate() + 1);
+  d.setSeconds(0, 0);
+  // datetime-local требует формат YYYY-MM-DDTHH:MM
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 const user = tg.initDataUnsafe?.user || {};
 const uid  = user.id || 0;
 const API  = '';  // '' = same origin, или 'https://api.your-domain.com'
@@ -705,6 +985,8 @@ let spinResult  = '';
   renderHome();
   syncCta();
   setDefaultDt();
+  document.getElementById('f-currency').value = 'USD';
+  document.getElementById('f-phone').value    = '+998 ';
   // Main button
   tg.MainButton.setParams({text:'➕ Новое объявление', color:'#002F34', text_color:'#FFCE32'});
   tg.MainButton.show();
@@ -826,13 +1108,17 @@ const BADGES = {
 function adCardHtml(ad, compact=false){
   const [bc,bl] = BADGES[ad.status]||BADGES.draft;
   const dt = ad.publish_at
-    ? new Date(ad.publish_at).toLocaleString('ru',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
+    ? formatDT(ad.publish_at, {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
     : '';
   const spinMark = ad.spin_enabled ? `<span class="spin-dot" title="AI спин включён"></span>` : '';
+  const imgs = ad.images || [];
+  const thumb = imgs.length
+    ? `<img src="${imgs[0]}" style="width:90px;height:90px;object-fit:cover;flex-shrink:0;" alt=""/>`
+    : `<div class="ad-thumb">🏠</div>`;
   return `
   <div class="ad-card" style="flex-direction:column">
     <div style="display:flex">
-      <div class="ad-thumb">🏠</div>
+      ${thumb}
       <div class="ad-body">
         <div class="ad-title">${esc(ad.title)}</div>
         <div class="ad-price">${ad.price ? esc(ad.price)+' '+esc(ad.currency||'UZS') : '—'}</div>
@@ -872,7 +1158,7 @@ function renderSchedule(){
   }
   el.innerHTML = ads.map(ad=>{
     const dt  = ad.publish_at ? new Date(ad.publish_at) : null;
-    const dts = dt ? dt.toLocaleString('ru',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+    const dts = dt ? dt.toLocaleString('ru',{timeZone:TZ,weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
     const cd  = dt ? cdText(dt) : '';
     return `
     <div style="margin-bottom:12px">
@@ -1032,8 +1318,7 @@ async function initPayment(plan, method){
 
 // ── FORM ─────────────────────────────────────────────────────────────────────
 function setDefaultDt(){
-  const d = new Date(Date.now() + 86400000); d.setSeconds(0,0);
-  document.getElementById('f-dt').value = d.toISOString().slice(0,16);
+  document.getElementById('f-dt').value = tomorrowTZ();
 }
 
 function renderAccountsSelect(){
@@ -1135,6 +1420,122 @@ async function spinAdText(adId){
   }
 }
 
+// ── DISTRICTS ─────────────────────────────────────────────────────────────────
+const DISTRICTS = {
+  'Ташкент': [
+    'Алмазарский','Бектемирский','Мирабадский','Мирзо-Улугбекский',
+    'Сергелийский','Учтепинский','Чиланзарский','Шайхантахурский',
+    'Юнусабадский','Яккасарайский','Яшнободский','Янгихаётский'
+  ],
+  'Самарканд': ['Самаркандский','Булунгурский','Джамбайский','Иштиханский',
+    'Каттакурганский','Нарпайский','Нурабадский','Пастдаргомский',
+    'Пайарыкский','Тайлакский','Ургутский'],
+  'Бухара': ['Бухарский','Алатский','Вабкентский','Гиждуванский',
+    'Жондорский','Каганский','Каракульский','Ромитанский','Шафирканский'],
+};
+
+function onCityChange(){
+  const city = document.getElementById('f-city').value;
+  const sel  = document.getElementById('f-district');
+  const list = DISTRICTS[city] || [];
+  if(list.length){
+    sel.innerHTML = `<option value="">— Выберите район —</option>`
+      + list.map(d=>`<option value="${d}">${d}</option>`).join('');
+  } else {
+    sel.innerHTML = `<option value="">— Нет данных, введите вручную —</option>`;
+  }
+}
+
+// ── NEGOTIABLE ────────────────────────────────────────────────────────────────
+let negotiableOn = false;
+document.getElementById('negotiableToggle').addEventListener('click', ()=>{
+  negotiableOn = !negotiableOn;
+  document.getElementById('negotiableSw').classList.toggle('on', negotiableOn);
+  const inp = document.getElementById('f-price');
+  if(negotiableOn){
+    inp.value=''; inp.placeholder='Договорная';
+    inp.disabled=true; inp.style.opacity='.5';
+  } else {
+    inp.placeholder='130 000';
+    inp.disabled=false; inp.style.opacity='1';
+  }
+});
+
+// ── CHECKBOXES ────────────────────────────────────────────────────────────────
+document.querySelectorAll('.chk-item').forEach(item=>{
+  item.addEventListener('click', ()=> item.classList.toggle('checked'));
+});
+
+function getChecked(gridId){
+  return Array.from(document.querySelectorAll(`#${gridId} .chk-item.checked input`))
+    .map(i=>i.value);
+}
+function setChecked(gridId, vals=[]){
+  document.querySelectorAll(`#${gridId} .chk-item`).forEach(item=>{
+    const v = item.querySelector('input')?.value;
+    item.classList.toggle('checked', vals.includes(v));
+  });
+}
+function clearCheckboxes(){
+  document.querySelectorAll('.chk-item').forEach(i=>i.classList.remove('checked'));
+}
+
+// ── PHOTOS ───────────────────────────────────────────────────────────────────
+let pendingPhotos = []; // [{dataUrl, file}]
+
+document.getElementById('photoFileInput').addEventListener('change', function(e){
+  const files = Array.from(e.target.files);
+  const remaining = 8 - pendingPhotos.length;
+  const toAdd = files.slice(0, remaining);
+
+  toAdd.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      pendingPhotos.push({ dataUrl: ev.target.result, file });
+      renderPhotoGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  if(files.length > remaining){
+    toast(`Максимум 8 фото. Добавлено ${toAdd.length}`, false, true);
+  }
+  // Сбрасываем input чтобы можно было выбрать те же файлы повторно
+  e.target.value = '';
+});
+
+function renderPhotoGrid(){
+  const grid  = document.getElementById('photoGrid');
+  const count = pendingPhotos.length;
+  document.getElementById('photoCountText').textContent = `${count}/8 фото`;
+
+  let html = pendingPhotos.map((p, i) => `
+    <div class="photo-item">
+      <img src="${p.dataUrl}" alt="фото ${i+1}"/>
+      <button class="photo-item-del" onclick="removePhoto(${i})">✕</button>
+      ${i===0 ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,47,52,.7);color:#FFCE32;font-size:9px;font-weight:700;text-align:center;padding:2px">ГЛАВНОЕ</div>` : ''}
+    </div>`).join('');
+
+  // Кнопка добавить (если меньше 8)
+  if(count < 8){
+    html += `<div class="photo-add" onclick="document.getElementById('photoFileInput').click()">
+      <div class="photo-add-ico">📷</div>
+      <div class="photo-add-lbl">Добавить</div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function removePhoto(index){
+  pendingPhotos.splice(index, 1);
+  renderPhotoGrid();
+}
+
+function clearPhotos(){
+  pendingPhotos = [];
+  renderPhotoGrid();
+}
+
 // ── SUBMIT ────────────────────────────────────────────────────────────────────
 function submitAd(){
   const title = document.getElementById('f-title').value.trim();
@@ -1146,24 +1547,39 @@ function submitAd(){
   const editId = document.getElementById('f-id').value;
   const ads    = getAds();
   const ad = {
-    id:          editId ? parseInt(editId) : nextId(),
+    id:            editId ? parseInt(editId) : nextId(),
     title,
-    description: document.getElementById('f-desc').value.trim(),
-    price:       document.getElementById('f-price').value.trim(),
-    currency:    document.getElementById('f-currency').value,
-    phone:       document.getElementById('f-phone').value.trim(),
-    category:    document.getElementById('f-cat').value,
-    city:        document.getElementById('f-city').value,
-    district:    document.getElementById('f-district').value.trim(),
-    rooms:       document.getElementById('f-rooms').value,
-    floor:       document.getElementById('f-floor').value.trim(),
-    area:        document.getElementById('f-area').value.trim(),
-    account_id:  document.getElementById('f-account').value || null,
-    status:      schedOn ? 'scheduled' : 'draft',
-    publish_at:  schedOn ? document.getElementById('f-dt').value : null,
-    spin_enabled:spinOn,
-    created_at:  new Date().toISOString(),
-    images:      [],
+    description:   document.getElementById('f-desc').value.trim(),
+    price:         negotiableOn ? 'Договорная' : document.getElementById('f-price').value.trim(),
+    currency:      document.getElementById('f-currency').value,
+    negotiable:    negotiableOn,
+    phone:         document.getElementById('f-phone').value.trim(),
+    category:      document.getElementById('f-cat').value,
+    city:          document.getElementById('f-city').value,
+    district:      document.getElementById('f-district').value,
+    address:       document.getElementById('f-address').value.trim(),
+    rooms:         document.getElementById('f-rooms').value,
+    floor:         document.getElementById('f-floor').value.trim(),
+    floors_total:  document.getElementById('f-floors-total').value.trim(),
+    area:          document.getElementById('f-area').value.trim(),
+    area_living:   document.getElementById('f-area-living').value.trim(),
+    area_kitchen:  document.getElementById('f-area-kitchen').value.trim(),
+    housing_type:  document.getElementById('f-housing-type').value,
+    building_type: document.getElementById('f-building-type').value,
+    layout:        document.getElementById('f-layout').value,
+    year:          document.getElementById('f-year').value.trim(),
+    bathroom:      document.getElementById('f-bathroom').value,
+    renovation:    document.getElementById('f-renovation').value,
+    furniture:     document.getElementById('f-furniture').value,
+    amenities:     getChecked('amenitiesGrid'),
+    infrastructure:getChecked('infraGrid'),
+    ad_type:       'business',   // всегда бизнес на OLX
+    account_id:    document.getElementById('f-account').value || null,
+    status:        schedOn ? 'scheduled' : 'draft',
+    publish_at:    schedOn ? document.getElementById('f-dt').value : null,
+    spin_enabled:  spinOn,
+    created_at:    new Date().toISOString(),
+    images:        pendingPhotos.map(p => p.dataUrl),
   };
 
   if(editId){
@@ -1176,44 +1592,77 @@ function submitAd(){
   toast(editId ? '✅ Изменения сохранены!' : schedOn ? '⏰ Запланировано!' : '💾 Черновик сохранён!');
   resetForm();
 
-  // Navigate
   const dest = schedOn ? 'sched' : 'ads';
   setTimeout(()=>{ goTo(dest); }, 900);
 }
 
 function resetForm(){
-  ['f-title','f-desc','f-price','f-phone','f-floor','f-area','f-district','f-id'].forEach(i=>{
-    const el=document.getElementById(i); if(el) el.value='';
-  });
-  ['f-currency','f-cat','f-city','f-rooms'].forEach(i=>{
-    const el=document.getElementById(i); if(el) el.value='';
-  });
-  document.getElementById('f-currency').value='UZS';
+  ['f-title','f-desc','f-price','f-phone','f-floor','f-floors-total',
+   'f-area','f-area-living','f-area-kitchen','f-year','f-address','f-id'
+  ].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
+  ['f-currency','f-cat','f-city','f-rooms','f-housing-type',
+   'f-building-type','f-layout','f-bathroom','f-renovation','f-furniture'
+  ].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
+  document.getElementById('f-currency').value = 'USD';
+  document.getElementById('f-phone').value = '+998 ';
+  document.getElementById('f-district').innerHTML = '<option value="">— Сначала выберите город —</option>';
+  // Сбрасываем negotiable
+  negotiableOn = false;
+  document.getElementById('negotiableSw').classList.remove('on');
+  const inp = document.getElementById('f-price');
+  inp.disabled=false; inp.style.opacity='1'; inp.placeholder='130 000';
+  // Сбрасываем чекбоксы
+  clearCheckboxes();
+  // Сбрасываем переключатели
   spinOn=false; schedOn=false; spinResult='';
   document.getElementById('spinSw').classList.remove('on');
   document.getElementById('schedSw').classList.remove('on');
   document.getElementById('spinPanel').style.display='none';
   document.getElementById('schedPanel').classList.remove('on');
   document.getElementById('spinPreview').style.display='none';
+  clearPhotos();
   syncCta(); setDefaultDt();
 }
 
 function editAd(id){
   const ad = getAds().find(a=>a.id===id);
   if(!ad) return;
-  document.getElementById('f-id').value       = ad.id;
-  document.getElementById('f-title').value    = ad.title;
-  document.getElementById('f-desc').value     = ad.description||'';
-  document.getElementById('f-price').value    = ad.price||'';
-  document.getElementById('f-currency').value = ad.currency||'UZS';
-  document.getElementById('f-phone').value    = ad.phone||'';
-  document.getElementById('f-cat').value      = ad.category||'';
-  document.getElementById('f-city').value     = ad.city||'';
-  document.getElementById('f-district').value = ad.district||'';
-  document.getElementById('f-rooms').value    = ad.rooms||'';
-  document.getElementById('f-floor').value    = ad.floor||'';
-  document.getElementById('f-area').value     = ad.area||'';
-  if(ad.account_id) document.getElementById('f-account').value = ad.account_id;
+  document.getElementById('f-id').value              = ad.id;
+  document.getElementById('f-title').value           = ad.title;
+  document.getElementById('f-desc').value            = ad.description||'';
+  document.getElementById('f-currency').value        = ad.currency||'USD';
+  document.getElementById('f-phone').value           = ad.phone||'+998 ';
+  document.getElementById('f-cat').value             = ad.category||'';
+  document.getElementById('f-city').value            = ad.city||'';
+  onCityChange();
+  document.getElementById('f-district').value        = ad.district||'';
+  document.getElementById('f-address').value         = ad.address||'';
+  document.getElementById('f-rooms').value           = ad.rooms||'';
+  document.getElementById('f-floor').value           = ad.floor||'';
+  document.getElementById('f-floors-total').value    = ad.floors_total||'';
+  document.getElementById('f-area').value            = ad.area||'';
+  document.getElementById('f-area-living').value     = ad.area_living||'';
+  document.getElementById('f-area-kitchen').value    = ad.area_kitchen||'';
+  document.getElementById('f-housing-type').value    = ad.housing_type||'';
+  document.getElementById('f-building-type').value   = ad.building_type||'';
+  document.getElementById('f-layout').value          = ad.layout||'';
+  document.getElementById('f-year').value            = ad.year||'';
+  document.getElementById('f-bathroom').value        = ad.bathroom||'';
+  document.getElementById('f-renovation').value      = ad.renovation||'';
+  document.getElementById('f-furniture').value       = ad.furniture||'';
+  // Цена
+  if(ad.negotiable){
+    negotiableOn = true;
+    document.getElementById('negotiableSw').classList.add('on');
+    const inp = document.getElementById('f-price');
+    inp.disabled=true; inp.style.opacity='.5'; inp.placeholder='Договорная';
+  } else {
+    document.getElementById('f-price').value = ad.price||'';
+  }
+  // Чекбоксы
+  setChecked('amenitiesGrid',  ad.amenities||[]);
+  setChecked('infraGrid',      ad.infrastructure||[]);
+  // Расписание
   if(ad.publish_at){
     schedOn=true;
     document.getElementById('schedSw').classList.add('on');
@@ -1280,7 +1729,7 @@ async function deleteAccount(id){
 function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
 function cdText(dt){
-  const ms = dt-Date.now();
+  const ms = dt - nowTZ();
   if(ms<0) return 'публикуется...';
   const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000);
   if(h>48) return `через ${Math.floor(h/24)} д.`;
@@ -1303,8 +1752,9 @@ function closeModal(id){
 // ── Auto-publish check (client-side) ─────────────────────────────────────────
 setInterval(()=>{
   const ads = getAds(); let changed=false;
+  const now = nowTZ();
   ads.forEach(a=>{
-    if(a.status==='scheduled' && a.publish_at && new Date(a.publish_at)<=new Date()){
+    if(a.status==='scheduled' && a.publish_at && new Date(a.publish_at)<=now){
       a.status='publishing'; changed=true;
       toast(`🔄 «${a.title.slice(0,20)}...» публикуется`);
     }
