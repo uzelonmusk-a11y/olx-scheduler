@@ -2083,6 +2083,7 @@ setInterval(()=>{
   });
   if(changed){ saveAds(ads); renderHome(); }
 }, 30000);
+if(!window.Telegram?.WebApp?.initData){ var s=lsGet(); s.sub={is_active:true,plan_info:{name:"Demo",ads_per_month:-1,spin_per_month:-1,accounts:10,price_month:50},sub:{ads_used:0,spins_used:0,expires_at:"2027-01-01"},plans:{basic:{name:"Старт",price_month:20,ads_per_month:300,spin_per_month:300,accounts:1},pro:{name:"Бизнес",price_month:50,ads_per_month:1500,spin_per_month:1500,accounts:3},business:{name:"Про",price_month:100,ads_per_month:4500,spin_per_month:4500,accounts:10},corporate:{name:"Корпоратив",price_month:200,ads_per_month:-1,spin_per_month:-1,accounts:99}}}; lsSave(s); }
 </script>
 </body>
 </html>
