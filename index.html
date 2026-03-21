@@ -48,13 +48,13 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* ── iOS Safe Area — шапка уезжает под Dynamic Island / notch ── */
+/* ── iOS Safe Area — шапка НИЖЕ Dynamic Island / notch ── */
 .hd {
-  padding-top: max(0px, env(safe-area-inset-top, 0px));
-  height: calc(52px + env(safe-area-inset-top, 0px));
+  padding-top: max(16px, env(safe-area-inset-top, 16px));
+  height: calc(52px + max(16px, env(safe-area-inset-top, 16px)));
 }
 .tabs {
-  top: calc(52px + env(safe-area-inset-top, 0px));
+  top: calc(52px + max(16px, env(safe-area-inset-top, 16px)));
 }
 
 /* ══════════════════════════════════════════════════════
@@ -571,7 +571,47 @@ input[type="datetime-local"] { color-scheme: light; }
 .sub-stat { background: rgba(255,255,255,.1); border-radius: 10px; padding: 10px 12px; }
 .sub-stat-n { font-size: 20px; font-weight: 800; }
 .sub-stat-l { font-size: 10px; opacity: .75; margin-top: 2px; }
-</style>
+
+/* ── Minimize button (ПК) ── */
+.hd-minimize {
+  display: none;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(255,255,255,.15); border: none;
+  color: rgba(255,255,255,.8); font-size: 14px;
+  cursor: pointer; align-items: center; justify-content: center;
+  transition: background .15s; flex-shrink: 0;
+  margin-left: 8px;
+}
+.hd-minimize:hover { background: rgba(255,255,255,.25); }
+@media (min-width: 600px) {
+  .hd-minimize { display: flex; }
+}
+
+/* ── Stats grid extended ── */
+.stat-row-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 10px; }
+.stat-row-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 10px; }
+@media (min-width: 600px) {
+  .stat-row-2 { grid-template-columns: repeat(4,1fr); }
+  .stat-row-3 { grid-template-columns: repeat(3,1fr); }
+}
+.stat-card-accent { background: var(--olx); border-color: var(--olx); }
+.stat-card-accent .stat-n { color: var(--accent); }
+.stat-card-accent .stat-l { color: rgba(255,255,255,.7); }
+.stat-card-warn .stat-n  { color: var(--warn); }
+.stat-card-danger .stat-n { color: var(--danger); }
+.stat-card-success .stat-n { color: var(--success); }
+
+/* ── Chart bar ── */
+.stat-bar-wrap { margin: 4px 0 0; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.stat-bar { height: 100%; border-radius: 4px; transition: width .6s ease; }
+
+/* ── Expired badge ── */
+.b-expired { background: #FFF3E0; color: #BF360C; }
+.b-deactivated { background: #F3E5F5; color: #6A1B9A; }
+
+/* ── Renew button ── */
+.btn-renew { background: #E8F5E9; color: #2E7D32; }
+
 </head>
 <body>
 
@@ -581,6 +621,7 @@ input[type="datetime-local"] { color-scheme: light; }
   <div class="hd-pipe"></div>
   <div class="hd-sub">для риелторов</div>
   <div class="hd-badge inactive" id="subBadge">Загрузка...</div>
+  <button class="hd-minimize" onclick="toggleMinimize()" title="Свернуть/развернуть">⊟</button>
 </div>
 
 <!-- TABS -->
@@ -589,6 +630,7 @@ input[type="datetime-local"] { color-scheme: light; }
   <div class="tab" data-pg="create"><span class="ti">➕</span>Создать</div>
   <div class="tab" data-pg="ads"><span class="ti">📋</span>Объявления</div>
   <div class="tab" data-pg="sched"><span class="ti">⏰</span>Расписание</div>
+  <div class="tab" data-pg="expired"><span class="ti">🔄</span>Истёкшие</div>
   <div class="tab" data-pg="sub"><span class="ti">💳</span>Подписка</div>
 </div>
 
@@ -603,11 +645,56 @@ input[type="datetime-local"] { color-scheme: light; }
   </div>
 
   <div id="homeStats" style="display:none">
-    <div class="stat-row">
-      <div class="stat-card"><div class="stat-n" id="h-sched">0</div><div class="stat-l">Запланировано</div></div>
-      <div class="stat-card"><div class="stat-n" id="h-pub">0</div><div class="stat-l">Опубликовано</div></div>
-      <div class="stat-card"><div class="stat-n" id="h-draft">0</div><div class="stat-l">Черновики</div></div>
-      <div class="stat-card"><div class="stat-n" id="h-fail">0</div><div class="stat-l">Ошибки</div></div>
+
+    <!-- Основные счётчики -->
+    <div class="stat-row-2">
+      <div class="stat-card stat-card-accent">
+        <div class="stat-n" id="h-pub">0</div>
+        <div class="stat-l">✅ Опубликовано</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" id="bar-pub" style="background:var(--accent);width:0%"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-n" id="h-sched">0</div>
+        <div class="stat-l">⏰ Запланировано</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" id="bar-sched" style="background:var(--warn);width:0%"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-n" id="h-draft">0</div>
+        <div class="stat-l">📝 Черновики</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" id="bar-draft" style="background:var(--muted);width:0%"></div></div>
+      </div>
+      <div class="stat-card stat-card-danger">
+        <div class="stat-n" id="h-fail">0</div>
+        <div class="stat-l">❌ Ошибки публикации</div>
+      </div>
+    </div>
+
+    <!-- Доп. статистика -->
+    <div class="stat-row-3">
+      <div class="stat-card stat-card-warn">
+        <div class="stat-n" id="h-expired">0</div>
+        <div class="stat-l">🔄 Истёкших</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-n" id="h-today">0</div>
+        <div class="stat-l">📤 Сегодня</div>
+      </div>
+      <div class="stat-card stat-card-success">
+        <div class="stat-n" id="h-total">0</div>
+        <div class="stat-l">📊 Всего объявлений</div>
+      </div>
+    </div>
+
+    <!-- Прогресс лимита подписки -->
+    <div class="form-block" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:700;color:var(--text)">Использование тарифа</div>
+        <div style="font-size:11px;color:var(--muted)" id="limitText">— / —</div>
+      </div>
+      <div style="height:8px;background:var(--bg);border-radius:8px;overflow:hidden">
+        <div id="limitBar" style="height:100%;background:var(--olx);border-radius:8px;width:0%;transition:width .6s ease"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:5px" id="limitSub"></div>
     </div>
 
     <div class="sec-h">
@@ -617,11 +704,31 @@ input[type="datetime-local"] { color-scheme: light; }
     <div id="homeUpcoming"></div>
 
     <div class="sec-h" style="margin-top:16px">
+      <div class="sec-ttl">🔄 Требуют продления</div>
+      <div class="sec-lnk" onclick="goTo('expired')">Все →</div>
+    </div>
+    <div id="homeExpired"></div>
+
+    <div class="sec-h" style="margin-top:16px">
       <div class="sec-ttl">Последние объявления</div>
       <div class="sec-lnk" onclick="goTo('ads')">Все →</div>
     </div>
     <div id="homeRecent"></div>
   </div>
+</div>
+
+<!-- ═══ EXPIRED ═══ -->
+<div class="pg" id="pg-expired">
+  <div style="font-size:13px;color:var(--muted);margin-bottom:12px;padding:10px 12px;background:var(--surface);border-radius:var(--r);border:1px solid var(--border)">
+    🔄 Здесь объявления которые истекли на OLX или были деактивированы. Ты можешь отредактировать и переопубликовать их заново.
+  </div>
+  <div class="chips">
+    <div class="chip on" data-ef="all">Все</div>
+    <div class="chip" data-ef="expired">Истёкшие</div>
+    <div class="chip" data-ef="failed">Ошибки</div>
+    <div class="chip" data-ef="cancelled">Отменённые</div>
+  </div>
+  <div id="expiredList"></div>
 </div>
 
 <!-- ═══ CREATE ═══ -->
@@ -954,6 +1061,7 @@ input[type="datetime-local"] { color-scheme: light; }
     <div class="chip" data-f="scheduled">Запланировано</div>
     <div class="chip" data-f="published">Опубликовано</div>
     <div class="chip" data-f="failed">Ошибки</div>
+    <div class="chip" data-f="expired">Истёкшие</div>
   </div>
   <div id="adsList"></div>
 </div>
@@ -1103,12 +1211,14 @@ document.querySelectorAll('.tab').forEach(t => {
 });
 
 function goTo(pg){
+  curPg = pg;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.pg===pg));
   document.querySelectorAll('.pg').forEach(p => p.classList.toggle('on', p.id===`pg-${pg}`));
-  if(pg==='home')   renderHome();
-  if(pg==='ads')    renderAds(curFilter);
-  if(pg==='sched')  renderSchedule();
-  if(pg==='sub')    renderSub();
+  if(pg==='home')    renderHome();
+  if(pg==='ads')     renderAds(curFilter);
+  if(pg==='sched')   renderSchedule();
+  if(pg==='expired') renderExpired();
+  if(pg==='sub')     renderSub();
 }
 
 // ── HOME ─────────────────────────────────────────────────────────────────────
@@ -1118,35 +1228,170 @@ function renderHome(){
   document.getElementById('homeStats').style.display  = isActive ? 'block' : 'none';
   if(!isActive) return;
 
-  const ads  = getAds();
-  const now  = new Date();
-  const d    = ads.filter(a=>a.status==='draft').length;
-  const s    = ads.filter(a=>a.status==='scheduled').length;
-  const p    = ads.filter(a=>a.status==='published').length;
-  const f    = ads.filter(a=>a.status==='failed').length;
-  document.getElementById('h-draft').textContent = d;
-  document.getElementById('h-sched').textContent = s;
-  document.getElementById('h-pub').textContent   = p;
-  document.getElementById('h-fail').textContent  = f;
+  const ads     = getAds();
+  const today   = nowTZ().toDateString();
+  const d       = ads.filter(a=>a.status==='draft').length;
+  const s       = ads.filter(a=>a.status==='scheduled').length;
+  const p       = ads.filter(a=>a.status==='published').length;
+  const f       = ads.filter(a=>a.status==='failed').length;
+  const exp     = ads.filter(a=>a.status==='expired').length;
+  const todayPub= ads.filter(a=>a.status==='published' &&
+    new Date(a.created_at).toDateString()===today).length;
+  const total   = ads.length;
+
+  document.getElementById('h-pub').textContent     = p;
+  document.getElementById('h-sched').textContent   = s;
+  document.getElementById('h-draft').textContent   = d;
+  document.getElementById('h-fail').textContent    = f;
+  document.getElementById('h-expired').textContent = exp;
+  document.getElementById('h-today').textContent   = todayPub;
+  document.getElementById('h-total').textContent   = total;
+
+  // Прогресс-бары
+  const maxVal = Math.max(p, s, d, 1);
+  setTimeout(()=>{
+    document.getElementById('bar-pub').style.width   = (p/maxVal*100)+'%';
+    document.getElementById('bar-sched').style.width = (s/maxVal*100)+'%';
+    document.getElementById('bar-draft').style.width = (d/maxVal*100)+'%';
+  }, 100);
+
+  // Лимит подписки
+  const planInfo = sub?.plan_info || {};
+  const limit    = planInfo.ads_per_month;
+  const used     = sub?.sub?.ads_used || 0;
+  if(limit && limit !== -1){
+    const pct = Math.min(100, Math.round(used/limit*100));
+    document.getElementById('limitText').textContent = `${used} / ${limit} объявлений`;
+    document.getElementById('limitSub').textContent  = `Использовано ${pct}% тарифа в этом месяце`;
+    setTimeout(()=>{
+      const bar = document.getElementById('limitBar');
+      bar.style.width = pct+'%';
+      bar.style.background = pct>85 ? 'var(--danger)' : pct>60 ? 'var(--warn)' : 'var(--olx)';
+    }, 150);
+  } else {
+    document.getElementById('limitText').textContent = `${used} / ∞`;
+    document.getElementById('limitSub').textContent  = 'Безлимитный тариф';
+    document.getElementById('limitBar').style.width  = '15%';
+  }
 
   // Upcoming
   const upcoming = ads.filter(a=>a.status==='scheduled')
     .sort((a,b)=>new Date(a.publish_at)-new Date(b.publish_at)).slice(0,3);
   const uEl = document.getElementById('homeUpcoming');
-  if(!upcoming.length){
-    uEl.innerHTML = `<div class="empty" style="padding:20px 10px">
-      <div class="empty-ico" style="font-size:32px">📭</div>
-      <div class="empty-sub">Нет запланированных публикаций</div></div>`;
-  } else {
-    uEl.innerHTML = upcoming.map(a=>adCardHtml(a, true)).join('');
-  }
+  uEl.innerHTML = upcoming.length
+    ? upcoming.map(a=>adCardHtml(a, true)).join('')
+    : `<div class="empty" style="padding:16px 10px">
+        <div class="empty-sub">Нет запланированных публикаций</div></div>`;
+
+  // Expired preview
+  const expAds = ads.filter(a=>['expired','failed','cancelled'].includes(a.status)).slice(0,2);
+  document.getElementById('homeExpired').innerHTML = expAds.length
+    ? expAds.map(a=>adCardHtml(a, true)).join('')
+    : `<div class="empty" style="padding:12px 10px">
+        <div class="empty-sub">Нет истёкших объявлений 👍</div></div>`;
 
   // Recent
   const recent = [...ads].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,3);
   document.getElementById('homeRecent').innerHTML =
     recent.length ? recent.map(a=>adCardHtml(a,true)).join('') :
-    `<div class="empty" style="padding:20px 10px">
+    `<div class="empty" style="padding:16px 10px">
       <div class="empty-sub">Объявлений ещё нет</div></div>`;
+}
+
+// ── EXPIRED ADS ───────────────────────────────────────────────────────────────
+let curExpiredFilter = 'all';
+
+function renderExpired(f){
+  curExpiredFilter = f || curExpiredFilter;
+  document.querySelectorAll('[data-ef]').forEach(c =>
+    c.classList.toggle('on', c.dataset.ef === curExpiredFilter));
+  const statuses = curExpiredFilter === 'all'
+    ? ['expired','failed','cancelled']
+    : [curExpiredFilter];
+  const ads = getAds().filter(a => statuses.includes(a.status));
+  const el  = document.getElementById('expiredList');
+  if(!ads.length){
+    el.innerHTML = `<div class="empty">
+      <div class="empty-ico">🎉</div>
+      <div class="empty-ttl">Всё в порядке!</div>
+      <div class="empty-sub">Нет истёкших или отменённых объявлений</div>
+    </div>`; return;
+  }
+  el.innerHTML = ads.map(ad => {
+    const [bc,bl] = BADGES[ad.status] || ['b-expired','⏰ Истёкшее'];
+    const imgs = ad.images || [];
+    const thumb = imgs.length
+      ? `<img src="${imgs[0]}" style="width:90px;height:90px;object-fit:cover;flex-shrink:0;" alt=""/>`
+      : `<div class="ad-thumb">🏠</div>`;
+    return `
+    <div class="ad-card" style="flex-direction:column">
+      <div style="display:flex">
+        ${thumb}
+        <div class="ad-body">
+          <div class="ad-title">${esc(ad.title)}</div>
+          <div class="ad-price">${ad.price ? esc(ad.price)+' '+esc(ad.currency||'USD') : '—'}</div>
+          <div class="ad-meta">
+            ${ad.city ? `<span>📍 ${esc(ad.city)}</span>` : ''}
+            ${ad.rooms ? `<span>🚪 ${esc(ad.rooms)} комн.</span>` : ''}
+          </div>
+          <div class="ad-status-row">
+            <span class="badge ${bc}">${bl}</span>
+            ${ad.error_msg ? `<span style="font-size:10px;color:var(--danger)">${esc(ad.error_msg.slice(0,40))}</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="ad-actions">
+        <button class="btn-xs btn-renew" onclick="renewAd(${ad.id})">🔄 Переопубликовать</button>
+        <button class="btn-xs btn-edit" onclick="editAd(${ad.id})">✏️ Изменить</button>
+        <button class="btn-xs btn-del"  onclick="deleteAd(${ad.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.querySelectorAll('[data-ef]').forEach(c => {
+  c.addEventListener('click', () => renderExpired(c.dataset.ef));
+});
+
+function renewAd(id){
+  // Копируем объявление как новый черновик и открываем форму
+  const ad = getAds().find(a=>a.id===id);
+  if(!ad) return;
+  editAd(id);
+  // Сбрасываем статус на черновик чтобы можно было заново запланировать
+  document.getElementById('f-id').value = ''; // новое объявление
+  schedOn = true;
+  document.getElementById('schedSw').classList.add('on');
+  document.getElementById('schedPanel').classList.add('on');
+  document.getElementById('f-dt').value = tomorrowTZ();
+  syncCta();
+  toast('✏️ Отредактируй и запланируй заново');
+}
+
+// ── MINIMIZE (ПК) ─────────────────────────────────────────────────────────────
+let minimized = false;
+function toggleMinimize(){
+  minimized = !minimized;
+  const tabs = document.querySelector('.tabs');
+  const pages = document.querySelectorAll('.pg');
+  const btn  = document.querySelector('.hd-minimize');
+  if(minimized){
+    tabs.style.display = 'none';
+    pages.forEach(p => p.style.display = 'none');
+    btn.textContent = '⊞';
+    btn.title = 'Развернуть';
+    document.body.style.minHeight = 'auto';
+  } else {
+    tabs.style.display = 'flex';
+    document.querySelector('#pg-'+curPg).classList.add('on');
+    document.querySelectorAll('.pg').forEach(p => {
+      if(p.id !== 'pg-'+curPg) p.style.display = 'none';
+    });
+    document.getElementById('pg-'+curPg).style.display = 'block';
+    btn.textContent = '⊟';
+    btn.title = 'Свернуть';
+    document.body.style.minHeight = '';
+  }
 }
 
 // ── ADS LIST ─────────────────────────────────────────────────────────────────
@@ -1176,6 +1421,8 @@ const BADGES = {
   published:  ['b-pub',  '✅ Опубликовано'],
   failed:     ['b-fail', '❌ Ошибка'],
   publishing: ['b-pub-ing','🔄 Публикуется'],
+  expired:    ['b-expired','🔄 Истёкшее'],
+  cancelled:  ['b-deactivated','🚫 Отменено'],
 };
 function adCardHtml(ad, compact=false){
   const [bc,bl] = BADGES[ad.status]||BADGES.draft;
